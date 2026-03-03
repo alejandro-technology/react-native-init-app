@@ -4,7 +4,7 @@ import { execa } from "execa";
 import { PM_COMMANDS } from "./constants.js";
 
 const FILES_TO_COPY = [
-  ".opencode",
+  ".ai",
   "src",
   "AGENTS.md",
   "opencode.json",
