@@ -1,8 +1,21 @@
-# Create React Native Init App
+# Create React Native Init App ⚡
 
-Interactive CLI tool to scaffold React Native projects with Clean Architecture.
+![npm](https://img.shields.io/npm/v/create-react-native-init-app)
+![license](https://img.shields.io/badge/license-MIT-green)
+![react-native](https://img.shields.io/badge/react--native-cli-blue)
 
-## Installation & Usage
+Interactive CLI tool to **scaffold production-ready React Native projects** using **Clean Architecture**.
+
+This CLI downloads a preconfigured template and helps you quickly bootstrap scalable mobile applications with best practices already in place.
+
+Perfect for:
+
+- starting new React Native projects
+- teams using Clean Architecture
+- rapid prototyping
+- AI-assisted development workflows
+
+## 🚀 Quick Start
 
 ### The Easiest Way (Automatic)
 
@@ -32,13 +45,15 @@ rnia
 react-native-init-app
 ```
 
-## Features
+## ✨ Features
 
-- 🆕 **Scaffold** - Create new React Native project from template
-- 🧹 **Clean** - Clean caches and build folders (Android, iOS, Node Modules, Watchman)
-- 📦 **Pod Install** - Install CocoaPods dependencies
-- 🤖 **Run Android** - Run app on Android device/emulator
-- 📥 **Downloads template** from GitHub automatically
+- **🚀** Scaffold new projects from a production-ready template
+- **🧱** Clean Architecture structure
+- **📦** Automatic template download from GitHub
+- **🧹** Clean caches (Android, iOS, Node Modules, Watchman)
+- **🍏** Install CocoaPods
+- **🤖** Run Android emulator
+- **⚡** Works with npm, npx, and bunx
 
 ## Usage
 
@@ -50,19 +65,19 @@ npx create-react-native-init-app
 rnia
 ```
 
-## Requirements
+## ⚙️ Requirements
 
 - Node.js >= 18.0.0
 - Bun (optional, for faster execution)
 
-## Template
+## 🧩 Template
 
 The CLI downloads the latest template from:
 
-- GitHub: [CrisangerA/react-native-template](https://github.com/CrisangerA/react-native-template)
+- GitHub: [alejandro-technology/react-native-template](https://github.com/alejandro-technology/react-native-template)
 - Branch: `main`
 
-## Commands
+## 🧰 Commands
 
 | Command     | Description                                              |
 | ----------- | -------------------------------------------------------- |
@@ -73,6 +88,13 @@ The CLI downloads the latest template from:
 | version     | Show CLI version                                         |
 | help        | Show help                                                |
 
-## License
+# 🤝 Contributing
+Contributions are welcome.
+Fork the repository
+Create your feature branch
+Commit changes
+Open a Pull Request
+
+# 📄 License
 
 MIT
