@@ -5,13 +5,13 @@ import { PM_COMMANDS } from "./constants.js";
 
 const FILES_TO_COPY = [
   "__tests__",
-  ".ai",
   ".bundle",
   ".github",
   // Folders
   "src",
   "vendor",
-  // AI
+  // AI - (Set one of useClaude, useOpencode, useTrae to true)
+  //".ai",
   //"AGENTS.md",
   //"opencode.json",
   //"CLAUDE.md",
@@ -52,7 +52,12 @@ export interface ScaffoldOptions {
   useOpencode: boolean;
   useTrae: boolean;
   templatePath: string;
-  onProgress?: (step: number, total: number, message: string, log?: string) => void;
+  onProgress?: (
+    step: number,
+    total: number,
+    message: string,
+    log?: string,
+  ) => void;
 }
 
 async function pathExists(filePath: string) {
@@ -74,7 +79,7 @@ async function writeJson(filePath: string, data: any) {
 }
 
 export async function scaffoldProject(
-  options: ScaffoldOptions
+  options: ScaffoldOptions,
 ): Promise<{ success: boolean; output: string; error?: string }> {
   const {
     projectName,
@@ -102,9 +107,12 @@ export async function scaffoldProject(
     args: string[],
     currentStep: number,
     message: string,
-    cwd?: string
+    cwd?: string,
   ) => {
-    const childProcess = execa(cmd, args, { cwd: cwd || process.cwd(), cleanup: true });
+    const childProcess = execa(cmd, args, {
+      cwd: cwd || process.cwd(),
+      cleanup: true,
+    });
 
     childProcess.stdout?.on("data", (data) => {
       onProgress?.(currentStep, totalSteps, message, data.toString());
@@ -133,7 +141,7 @@ export async function scaffoldProject(
         "--skip-install",
       ],
       step++,
-      initMessage
+      initMessage,
       // No cwd here, run in current dir
     );
 
@@ -157,7 +165,15 @@ export async function scaffoldProject(
     const filesToCopy = Array.from(new Set([...FILES_TO_COPY, ...extraFiles]));
 
     for (const file of filesToCopy) {
-      const srcPath = path.join(templatePath, file);
+      let templateFile = file;
+      
+      const useAgent = useOpencode || useClaude || useTrae;
+      const isAgentFolder = file.includes('.claude') || file.includes('.opencode') || file.includes('.trae')
+      if (useAgent && isAgentFolder) {
+        templateFile = ".ai/";
+      }
+
+      const srcPath = path.join(templatePath, templateFile);
       const destPath = path.join(projectDir, file);
       if (await pathExists(srcPath)) {
         await fs.cp(srcPath, destPath, { recursive: true });
@@ -167,7 +183,7 @@ export async function scaffoldProject(
     onProgress?.(step++, totalSteps, "Merging package.json...");
 
     const templatePackageJson = await readJson(
-      path.join(templatePath, "package.json")
+      path.join(templatePath, "package.json"),
     );
     const newPackageJsonPath = path.join(projectDir, "package.json");
     const newPackageJson = await readJson(newPackageJsonPath);
@@ -197,7 +213,7 @@ export async function scaffoldProject(
       await execa(
         "git",
         ["commit", "-m", "chore: apply OpenCode Clean Architecture template"],
-        { cwd: projectDir }
+        { cwd: projectDir },
       );
     } catch {
       // Git skipped if not available
@@ -215,8 +231,20 @@ export async function scaffoldProject(
       if (podInstall && process.platform === "darwin") {
         const podMessage = "Running pod install...";
         onProgress?.(step, totalSteps, podMessage);
-        await runStreamed(cmd, ["run", "pod-cocoa"], step++, podMessage, projectDir);
-        await runStreamed(cmd, ["run", "pod-install"], step++, podMessage, projectDir);
+        await runStreamed(
+          cmd,
+          ["run", "pod-cocoa"],
+          step++,
+          podMessage,
+          projectDir,
+        );
+        await runStreamed(
+          cmd,
+          ["run", "pod-install"],
+          step++,
+          podMessage,
+          projectDir,
+        );
       }
     }
 
@@ -230,13 +258,13 @@ export async function scaffoldProject(
 Next steps:
   cd ${projectDir}
   ${PM_COMMANDS[packageManager as keyof typeof PM_COMMANDS].run(
-    "start"
+    "start",
   )}   # Start Metro bundler
   ${PM_COMMANDS[packageManager as keyof typeof PM_COMMANDS].run(
-    "ios"
+    "ios",
   )} # Run on iOS
   ${PM_COMMANDS[packageManager as keyof typeof PM_COMMANDS].run(
-    "android"
+    "android",
   )} # Run on Android
 `;
 
