@@ -12,8 +12,9 @@ const FILES_TO_COPY = [
   "src",
   "vendor",
   // AI
-  "AGENTS.md",
-  "opencode.json",
+  //"AGENTS.md",
+  //"opencode.json",
+  //"CLAUDE.md",
   // Lint & Config
   ".eslintrc.js",
   ".prettierrc.js",
@@ -34,6 +35,12 @@ const FILES_TO_COPY = [
 
 const FILES_TO_DELETE = ["App.tsx", "src", "__tests__"];
 
+const CODE_AGENT_FILES = {
+  claude: ["CLAUDE.md", ".claude"],
+  opencode: ["AGENTS.md", "opencode.json", ".opencode"],
+  trae: [".trae", "TRAE.md"],
+} as const;
+
 export interface ScaffoldOptions {
   projectName: string;
   bundleId: string;
@@ -41,6 +48,9 @@ export interface ScaffoldOptions {
   packageManager: string;
   installDeps: boolean;
   podInstall: boolean;
+  useClaude: boolean;
+  useOpencode: boolean;
+  useTrae: boolean;
   templatePath: string;
   onProgress?: (step: number, total: number, message: string, log?: string) => void;
 }
@@ -73,6 +83,9 @@ export async function scaffoldProject(
     packageManager,
     installDeps,
     podInstall,
+    useClaude,
+    useOpencode,
+    useTrae,
     templatePath,
     onProgress,
   } = options;
@@ -135,7 +148,15 @@ export async function scaffoldProject(
 
     onProgress?.(step++, totalSteps, "Copying template files...");
 
-    for (const file of FILES_TO_COPY) {
+    const extraFiles = [
+      ...(useClaude ? CODE_AGENT_FILES.claude : []),
+      ...(useOpencode ? CODE_AGENT_FILES.opencode : []),
+      ...(useTrae ? CODE_AGENT_FILES.trae : []),
+    ];
+
+    const filesToCopy = Array.from(new Set([...FILES_TO_COPY, ...extraFiles]));
+
+    for (const file of filesToCopy) {
       const srcPath = path.join(templatePath, file);
       const destPath = path.join(projectDir, file);
       if (await pathExists(srcPath)) {

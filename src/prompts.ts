@@ -61,7 +61,7 @@ async function promptScaffoldData(): Promise<PromptResult> {
         validate: validateDirectory,
       },
     ],
-  });
+  } as any);
 
   const { bundleId, directory } = formData;
 
@@ -89,7 +89,19 @@ async function promptScaffoldData(): Promise<PromptResult> {
       { name: "installDeps", message: "Install dependencies" },
       { name: "podInstall", message: "Run pod install (iOS)" },
     ],
-  });
+  } as any);
+
+  const { codeAgents } = await enquirer.prompt<{ codeAgents: string[] }>({
+    type: "multiselect",
+    name: "codeAgents",
+    message: "Which code agents do you want to configure?",
+    hint: "(Press <space> to select, <return> to submit, or just <enter> to skip all)",
+    choices: [
+      { name: "claude", message: "Claude" },
+      { name: "opencode", message: "OpenCode" },
+      { name: "trae", message: "Trae" },
+    ],
+  } as any);
 
   return {
     command: "scaffold",
@@ -100,6 +112,9 @@ async function promptScaffoldData(): Promise<PromptResult> {
       packageManager,
       installDeps: options.includes("installDeps"),
       podInstall: options.includes("podInstall"),
+      useClaude: codeAgents.includes("claude"),
+      useOpencode: codeAgents.includes("opencode"),
+      useTrae: codeAgents.includes("trae"),
     },
   };
 }

@@ -20,6 +20,9 @@ export interface ScaffoldData {
   packageManager: string;
   installDeps: boolean;
   podInstall: boolean;
+  useClaude: boolean;
+  useOpencode: boolean;
+  useTrae: boolean;
 }
 
 export interface PromptResult {
