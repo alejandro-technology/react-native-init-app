@@ -4,24 +4,32 @@ import { execa } from "execa";
 import { PM_COMMANDS } from "./constants.js";
 
 const FILES_TO_COPY = [
+  "__tests__",
   ".ai",
+  ".bundle",
+  ".github",
+  // Folders
   "src",
+  "vendor",
+  // AI
   "AGENTS.md",
   "opencode.json",
-  "tsconfig.json",
-  "babel.config.js",
-  ".prettierrc.js",
+  // Lint & Config
   ".eslintrc.js",
+  ".prettierrc.js",
   ".watchmanconfig",
-  ".gitignore",
-  "Gemfile",
-  "jest.config.js",
   "metro.config.js",
+  // iOS
+  "Gemfile",
+  // Files
   "index.js",
   "App.tsx",
-  "__tests__",
-  "vendor",
-  ".bundle",
+  // Test
+  "jest.config.js",
+  "jest.setup.js",
+  // Config
+  "babel.config.js",
+  "tsconfig.json",
 ];
 
 const FILES_TO_DELETE = ["App.tsx", "src", "__tests__"];
@@ -186,6 +194,7 @@ export async function scaffoldProject(
       if (podInstall && process.platform === "darwin") {
         const podMessage = "Running pod install...";
         onProgress?.(step, totalSteps, podMessage);
+        await runStreamed(cmd, ["run", "pod-cocoa"], step++, podMessage, projectDir);
         await runStreamed(cmd, ["run", "pod-install"], step++, podMessage, projectDir);
       }
     }

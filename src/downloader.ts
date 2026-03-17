@@ -4,7 +4,7 @@ import path from "node:path";
 import os from "node:os";
 import tar from "tar";
 
-const TEMPLATE_REPO = "CrisangerA/react-native-template";
+const TEMPLATE_REPO = "alejandro-technology/react-native-template";
 const TEMPLATE_BRANCH = "main";
 
 export interface DownloadOptions {
