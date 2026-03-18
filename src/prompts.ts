@@ -103,6 +103,15 @@ async function promptScaffoldData(): Promise<PromptResult> {
     ],
   } as any);
 
+  const { includeFirebase } = await enquirer.prompt<{
+    includeFirebase: boolean;
+  }>({
+    type: "confirm",
+    name: "includeFirebase",
+    message: "Include Firebase setup?",
+    initial: false,
+  } as any);
+
   return {
     command: "scaffold",
     scaffoldData: {
@@ -115,6 +124,7 @@ async function promptScaffoldData(): Promise<PromptResult> {
       useClaude: codeAgents.includes("claude"),
       useOpencode: codeAgents.includes("opencode"),
       useTrae: codeAgents.includes("trae"),
+      useFirebase: includeFirebase,
     },
   };
 }

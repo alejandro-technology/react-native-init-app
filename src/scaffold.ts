@@ -41,6 +41,13 @@ const CODE_AGENT_FILES = {
   trae: [".trae", "TRAE.md"],
 } as const;
 
+const FIREBASE_FILES = (projectName: string) => [
+  "/android/build.gradle",
+  "/android/app/build.gradle",
+  "/ios/Podfile",
+  `/ios/${projectName}/AppDelegate.swift`,
+] as const;
+
 export interface ScaffoldOptions {
   projectName: string;
   bundleId: string;
@@ -51,6 +58,7 @@ export interface ScaffoldOptions {
   useClaude: boolean;
   useOpencode: boolean;
   useTrae: boolean;
+  useFirebase: boolean;
   templatePath: string;
   onProgress?: (
     step: number,
@@ -91,6 +99,7 @@ export async function scaffoldProject(
     useClaude,
     useOpencode,
     useTrae,
+    useFirebase,
     templatePath,
     onProgress,
   } = options;
@@ -160,6 +169,7 @@ export async function scaffoldProject(
       ...(useClaude ? CODE_AGENT_FILES.claude : []),
       ...(useOpencode ? CODE_AGENT_FILES.opencode : []),
       ...(useTrae ? CODE_AGENT_FILES.trae : []),
+      ...(useFirebase ? FIREBASE_FILES(projectName) : []),
     ];
 
     const filesToCopy = Array.from(new Set([...FILES_TO_COPY, ...extraFiles]));

@@ -23,6 +23,7 @@ export interface ScaffoldData {
   useClaude: boolean;
   useOpencode: boolean;
   useTrae: boolean;
+  useFirebase: boolean;
 }
 
 export interface PromptResult {
