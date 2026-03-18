@@ -1,6 +1,6 @@
 {
   "name": "create-react-native-init-app",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "type": "module",
   "description": "Interactive CLI to scaffold React Native projects",
   "main": "bin/index.js",

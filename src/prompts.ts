@@ -109,7 +109,7 @@ async function promptScaffoldData(): Promise<PromptResult> {
     type: "confirm",
     name: "includeFirebase",
     message: "Include Firebase setup?",
-    initial: false,
+    initial: true,
   } as any);
 
   return {

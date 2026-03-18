@@ -41,12 +41,13 @@ const CODE_AGENT_FILES = {
   trae: [".trae", "TRAE.md"],
 } as const;
 
-const FIREBASE_FILES = (projectName: string) => [
-  "/android/build.gradle",
-  "/android/app/build.gradle",
-  "/ios/Podfile",
-  `/ios/${projectName}/AppDelegate.swift`,
-] as const;
+const FIREBASE_FILES = (projectName: string) =>
+  [
+    "/android/build.gradle",
+    "/android/app/build.gradle",
+    "/ios/Podfile",
+    `/ios/${projectName}/AppDelegate.swift`,
+  ] as const;
 
 export interface ScaffoldOptions {
   projectName: string;
@@ -176,9 +177,12 @@ export async function scaffoldProject(
 
     for (const file of filesToCopy) {
       let templateFile = file;
-      
+
       const useAgent = useOpencode || useClaude || useTrae;
-      const isAgentFolder = file.includes('.claude') || file.includes('.opencode') || file.includes('.trae')
+      const isAgentFolder =
+        file.includes(".claude") ||
+        file.includes(".opencode") ||
+        file.includes(".trae");
       if (useAgent && isAgentFolder) {
         templateFile = ".ai/";
       }
