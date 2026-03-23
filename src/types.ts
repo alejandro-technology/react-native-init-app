@@ -24,6 +24,7 @@ export interface ScaffoldData {
   useOpencode: boolean;
   useTrae: boolean;
   useFirebase: boolean;
+  firebaseModules: string[];
 }
 
 export interface PromptResult {

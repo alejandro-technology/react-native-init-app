@@ -112,6 +112,23 @@ async function promptScaffoldData(): Promise<PromptResult> {
     initial: true,
   } as any);
 
+  let firebaseModules: string[] = [];
+  if (includeFirebase) {
+    const response = await enquirer.prompt<{ firebaseModules: string[] }>({
+      type: "multiselect",
+      name: "firebaseModules",
+      message: "Which Firebase modules do you want to include?",
+      hint: "(Press <space> to select, <return> to submit)",
+      choices: [
+        { name: "auth", message: "Authentication" },
+        { name: "firestore", message: "Firestore" },
+        { name: "storage", message: "Storage" },
+      ],
+      initial: [0, 1, 2], // Select all by default
+    } as any);
+    firebaseModules = response.firebaseModules;
+  }
+
   return {
     command: "scaffold",
     scaffoldData: {
@@ -125,6 +142,7 @@ async function promptScaffoldData(): Promise<PromptResult> {
       useOpencode: codeAgents.includes("opencode"),
       useTrae: codeAgents.includes("trae"),
       useFirebase: includeFirebase,
+      firebaseModules,
     },
   };
 }
