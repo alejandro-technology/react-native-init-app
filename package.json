@@ -13,7 +13,8 @@
     "dev": "bun src/cli.tsx",
     "build": "bun scripts/build.ts",
     "prepublishOnly": "bun run build",
-    "test": "jest"
+    "test": "jest",
+    "publish": "npm publish --access public"
   },
   "keywords": [
     "react-native",
@@ -22,16 +23,16 @@
     "clean-architecture",
     "template"
   ],
-  "author": "CrisangerA",
+  "author": "alejandro-technology",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/CrisangerA/react-native-init-app.git"
+    "url": "git+https://github.com/alejandro-technology/react-native-init-app.git"
   },
   "bugs": {
-    "url": "https://github.com/CrisangerA/react-native-init-app/issues"
+    "url": "https://github.com/alejandro-technology/react-native-init-app/issues"
   },
-  "homepage": "https://github.com/CrisangerA/react-native-init-app#readme",
+  "homepage": "https://github.com/alejandro-technology/react-native-init-app#readme",
   "publishConfig": {
     "access": "public"
   },
