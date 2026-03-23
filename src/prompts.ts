@@ -109,7 +109,7 @@ async function promptScaffoldData(): Promise<PromptResult> {
     type: "confirm",
     name: "includeFirebase",
     message: "Include Firebase setup?",
-    initial: true,
+    initial: false,
   } as any);
 
   let firebaseModules: string[] = [];
