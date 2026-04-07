@@ -4,10 +4,12 @@ import { execa } from "execa";
 import { PM_COMMANDS } from "./constants.js";
 
 const FILES_TO_COPY = [
+  "__mocks__",
   "__tests__",
   ".bundle",
   ".github",
   ".env.example",
+  ".husky",
   // Folders
   "src",
   "vendor",
@@ -17,7 +19,9 @@ const FILES_TO_COPY = [
   //"opencode.json",
   //"CLAUDE.md",
   // Lint & Config
+  ".eslintignore",
   ".eslintrc.js",
+  ".nvmrc",
   ".prettierrc.js",
   ".watchmanconfig",
   "metro.config.js",
@@ -26,6 +30,8 @@ const FILES_TO_COPY = [
   // Files
   "index.js",
   "App.tsx",
+  "declarations.d.ts",
+  "TEMPLATE_USAGE.md",
   // Test
   "jest.config.js",
   "jest.setup.js",
@@ -182,6 +188,8 @@ export async function scaffoldProject(
         "--package-name",
         bundleId,
         "--skip-install",
+        "--version",
+        "0.83.4",
       ],
       step++,
       initMessage,
@@ -301,6 +309,7 @@ export async function scaffoldProject(
       dependencies: templateDeps,
       devDependencies: templatePackageJson.devDependencies,
       scripts: templatePackageJson.scripts,
+      'lint-staged': templatePackageJson['lint-staged'],
     };
 
     await writeJson(newPackageJsonPath, mergedPackageJson);

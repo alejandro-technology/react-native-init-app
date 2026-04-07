@@ -1,6 +1,6 @@
 {
   "name": "create-react-native-init-app",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "type": "module",
   "description": "Interactive CLI to scaffold React Native projects",
   "main": "bin/index.js",
@@ -32,7 +32,7 @@
   "bugs": {
     "url": "https://github.com/alejandro-technology/react-native-init-app/issues"
   },
-  "homepage": "https://github.com/alejandro-technology/react-native-init-app#readme",
+  "homepage": "https://rnkit.alejandrotechnology.com",
   "publishConfig": {
     "access": "public"
   },
