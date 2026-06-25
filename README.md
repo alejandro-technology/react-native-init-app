@@ -42,6 +42,7 @@ npm install -g create-react-native-tui
 
 # Now you can use the following commands:
 rnia
+# or
 react-native-tui
 ```
 
@@ -54,16 +55,6 @@ react-native-tui
 - **🍏** Install CocoaPods
 - **🤖** Run Android emulator
 - **⚡** Works with npm, npx, and bunx
-
-## Usage
-
-```bash
-# Interactive mode
-npx create-react-native-tui
-
-# Short alias (after global install)
-rnia
-```
 
 ## ⚙️ Requirements
 
