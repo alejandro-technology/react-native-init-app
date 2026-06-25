@@ -184,7 +184,7 @@ export async function runPrompt(): Promise<PromptResult> {
     choices: [
       {
         name: "scaffold",
-        message: "🚀 Create New Project",
+        message: "🚀  Create New Project",
         hint: "Create new project from template",
       },
       {

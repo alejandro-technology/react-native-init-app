@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { execa } from "execa";
+import chalk from "chalk";
 import { PM_COMMANDS } from "./constants.js";
 
 const FILES_TO_COPY = [
@@ -49,15 +50,26 @@ const CODE_AGENT_FILES = {
 } as const;
 
 const TEMPLATE_NAME = "rncatemplate";
+const TEMPLATE_BUNDLE_ID = "com.alejandrotechnology.rncatemplate";
 
 const FIREBASE_FILES = (projectName: string) =>
   [
+    // Android
     { src: "android/build.gradle", dest: "android/build.gradle" },
     { src: "android/app/build.gradle", dest: "android/app/build.gradle" },
+    {
+      src: "android/app/google-services-dummy.json",
+      dest: "android/app/google-services.json",
+    },
+    // iOS
     { src: "ios/Podfile", dest: "ios/Podfile" },
     {
       src: `ios/${TEMPLATE_NAME}/AppDelegate.swift`,
       dest: `ios/${projectName}/AppDelegate.swift`,
+    },
+    {
+      src: "ios/GoogleService-Info-Dummy.plist",
+      dest: "ios/GoogleService-Info.plist",
     },
   ] as const;
 
@@ -243,19 +255,24 @@ export async function scaffoldProject(
           await fs.cp(srcPath, destPath, { recursive: true });
         }
       }
-    }
 
-    await replaceInFileIfExists(
-      path.join(projectDir, ".github/workflows/ios-build.yml"),
-      (content) => content.replaceAll(TEMPLATE_NAME, projectName),
-    );
-
-    if (useFirebase) {
+      // Replace Firebase files with project name
       await replaceInFileIfExists(
         path.join(projectDir, "ios/Podfile"),
         (content) => content.replaceAll(TEMPLATE_NAME, projectName),
       );
 
+      await replaceInFileIfExists(
+        path.join(projectDir, `ios/${projectName}/AppDelegate.swift`),
+        (content) => content.replaceAll(TEMPLATE_NAME, projectName),
+      );
+
+      await replaceInFileIfExists(
+        path.join(projectDir, "ios/GoogleService-Info.plist"),
+        (content) => content.replaceAll(TEMPLATE_BUNDLE_ID, bundleId),
+      );
+
+      // Android files
       await replaceInFileIfExists(
         path.join(projectDir, "android/build.gradle"),
         (content) => content.replaceAll(TEMPLATE_NAME, projectName),
@@ -264,14 +281,22 @@ export async function scaffoldProject(
       await replaceInFileIfExists(
         path.join(projectDir, "android/app/build.gradle"),
         (content) =>
-          patchAndroidAppGradle(content.replaceAll(TEMPLATE_NAME, projectName), bundleId),
+          patchAndroidAppGradle(
+            content.replaceAll(TEMPLATE_NAME, projectName),
+            bundleId,
+          ),
       );
 
       await replaceInFileIfExists(
-        path.join(projectDir, `ios/${projectName}/AppDelegate.swift`),
-        (content) => content.replaceAll(TEMPLATE_NAME, projectName),
+        path.join(projectDir, "android/app/google-services.json"),
+        (content) => content.replaceAll(TEMPLATE_BUNDLE_ID, bundleId),
       );
     }
+
+    await replaceInFileIfExists(
+      path.join(projectDir, ".github/workflows/ios-build.yml"),
+      (content) => content.replaceAll(TEMPLATE_NAME, projectName),
+    );
 
     onProgress?.(step++, totalSteps, "Merging package.json...");
 
@@ -309,7 +334,7 @@ export async function scaffoldProject(
       dependencies: templateDeps,
       devDependencies: templatePackageJson.devDependencies,
       scripts: templatePackageJson.scripts,
-      'lint-staged': templatePackageJson['lint-staged'],
+      "lint-staged": templatePackageJson["lint-staged"],
     };
 
     await writeJson(newPackageJsonPath, mergedPackageJson);
@@ -323,10 +348,31 @@ export async function scaffoldProject(
     onProgress?.(step++, totalSteps, "Pruning unused modules...");
     if (!useFirebase) {
       // Remove all firebase infrastructure files
-      await fs.rm(path.join(projectDir, "src/modules/firebase"), { recursive: true, force: true });
-      await fs.rm(path.join(projectDir, "src/modules/authentication/infrastructure/firebase-auth.service.ts"), { force: true });
-      await fs.rm(path.join(projectDir, "src/modules/products/infrastructure/product.firebase.service.ts"), { force: true });
-      await fs.rm(path.join(projectDir, "src/modules/users/infrastructure/user.firebase.service.ts"), { force: true });
+      await fs.rm(path.join(projectDir, "src/modules/firebase"), {
+        recursive: true,
+        force: true,
+      });
+      await fs.rm(
+        path.join(
+          projectDir,
+          "src/modules/authentication/infrastructure/firebase-auth.service.ts",
+        ),
+        { force: true },
+      );
+      await fs.rm(
+        path.join(
+          projectDir,
+          "src/modules/products/infrastructure/product.firebase.service.ts",
+        ),
+        { force: true },
+      );
+      await fs.rm(
+        path.join(
+          projectDir,
+          "src/modules/users/infrastructure/user.firebase.service.ts",
+        ),
+        { force: true },
+      );
 
       // Patch config
       const configPath = path.join(projectDir, "src/config/config.ts");
@@ -334,76 +380,196 @@ export async function scaffoldProject(
         let configContent = await fs.readFile(configPath, "utf-8");
         configContent = configContent.replace(
           /export type ServiceProvider = 'http' \| 'firebase' \| 'mock';/,
-          "export type ServiceProvider = 'http' | 'mock';"
+          "export type ServiceProvider = 'http' | 'mock';",
         );
         await fs.writeFile(configPath, configContent);
       }
     } else {
       if (!firebaseModules.includes("auth")) {
-        await fs.rm(path.join(projectDir, "src/modules/authentication/infrastructure/firebase-auth.service.ts"), { force: true });
+        await fs.rm(
+          path.join(
+            projectDir,
+            "src/modules/authentication/infrastructure/firebase-auth.service.ts",
+          ),
+          { force: true },
+        );
       }
       if (!firebaseModules.includes("firestore")) {
-        await fs.rm(path.join(projectDir, "src/modules/firebase/infrastructure/firestore.service.ts"), { force: true });
-        await fs.rm(path.join(projectDir, "src/modules/firebase/application/firestore.hooks.ts"), { force: true });
-        await fs.rm(path.join(projectDir, "src/modules/firebase/domain/firestore.model.ts"), { force: true });
-        await fs.rm(path.join(projectDir, "src/modules/firebase/domain/firestore.repository.ts"), { force: true });
-        await fs.rm(path.join(projectDir, "src/modules/products/infrastructure/product.firebase.service.ts"), { force: true });
-        await fs.rm(path.join(projectDir, "src/modules/users/infrastructure/user.firebase.service.ts"), { force: true });
+        await fs.rm(
+          path.join(
+            projectDir,
+            "src/modules/firebase/infrastructure/firestore.service.ts",
+          ),
+          { force: true },
+        );
+        await fs.rm(
+          path.join(
+            projectDir,
+            "src/modules/firebase/application/firestore.hooks.ts",
+          ),
+          { force: true },
+        );
+        await fs.rm(
+          path.join(
+            projectDir,
+            "src/modules/firebase/domain/firestore.model.ts",
+          ),
+          { force: true },
+        );
+        await fs.rm(
+          path.join(
+            projectDir,
+            "src/modules/firebase/domain/firestore.repository.ts",
+          ),
+          { force: true },
+        );
+        await fs.rm(
+          path.join(
+            projectDir,
+            "src/modules/products/infrastructure/product.firebase.service.ts",
+          ),
+          { force: true },
+        );
+        await fs.rm(
+          path.join(
+            projectDir,
+            "src/modules/users/infrastructure/user.firebase.service.ts",
+          ),
+          { force: true },
+        );
       }
       if (!firebaseModules.includes("storage")) {
-        await fs.rm(path.join(projectDir, "src/modules/firebase/infrastructure/storage.service.ts"), { force: true });
-        await fs.rm(path.join(projectDir, "src/modules/firebase/application/storage.mutations.ts"), { force: true });
-        await fs.rm(path.join(projectDir, "src/modules/firebase/application/storage.queries.ts"), { force: true });
-        await fs.rm(path.join(projectDir, "src/modules/firebase/domain/storage.model.ts"), { force: true });
-        await fs.rm(path.join(projectDir, "src/modules/firebase/domain/storage.repository.ts"), { force: true });
-        await fs.rm(path.join(projectDir, "src/modules/firebase/domain/storage.adapter.ts"), { force: true });
+        await fs.rm(
+          path.join(
+            projectDir,
+            "src/modules/firebase/infrastructure/storage.service.ts",
+          ),
+          { force: true },
+        );
+        await fs.rm(
+          path.join(
+            projectDir,
+            "src/modules/firebase/application/storage.mutations.ts",
+          ),
+          { force: true },
+        );
+        await fs.rm(
+          path.join(
+            projectDir,
+            "src/modules/firebase/application/storage.queries.ts",
+          ),
+          { force: true },
+        );
+        await fs.rm(
+          path.join(projectDir, "src/modules/firebase/domain/storage.model.ts"),
+          { force: true },
+        );
+        await fs.rm(
+          path.join(
+            projectDir,
+            "src/modules/firebase/domain/storage.repository.ts",
+          ),
+          { force: true },
+        );
+        await fs.rm(
+          path.join(
+            projectDir,
+            "src/modules/firebase/domain/storage.adapter.ts",
+          ),
+          { force: true },
+        );
       }
     }
 
     onProgress?.(step++, totalSteps, "Patching dependency injectors...");
     // Auth Service
-    const authServicePath = path.join(projectDir, "src/modules/authentication/infrastructure/auth.service.ts");
+    const authServicePath = path.join(
+      projectDir,
+      "src/modules/authentication/infrastructure/auth.service.ts",
+    );
     if (await pathExists(authServicePath)) {
       let authServiceContent = await fs.readFile(authServicePath, "utf-8");
       if (!useFirebase || !firebaseModules.includes("auth")) {
-        authServiceContent = authServiceContent.replace(/import authFirebaseService from '\.\/firebase-auth\.service';\n/, "");
-        authServiceContent = authServiceContent.replace(/    case 'firebase':\n      return authFirebaseService;\n/, "");
+        authServiceContent = authServiceContent.replace(
+          /import authFirebaseService from '\.\/firebase-auth\.service';\n/,
+          "",
+        );
+        authServiceContent = authServiceContent.replace(
+          /    case 'firebase':\n      return authFirebaseService;\n/,
+          "",
+        );
       }
       await fs.writeFile(authServicePath, authServiceContent);
     }
 
     // Product Service
-    const productServicePath = path.join(projectDir, "src/modules/products/infrastructure/product.service.ts");
+    const productServicePath = path.join(
+      projectDir,
+      "src/modules/products/infrastructure/product.service.ts",
+    );
     if (await pathExists(productServicePath)) {
-      let productServiceContent = await fs.readFile(productServicePath, "utf-8");
+      let productServiceContent = await fs.readFile(
+        productServicePath,
+        "utf-8",
+      );
       if (!useFirebase || !firebaseModules.includes("firestore")) {
-        productServiceContent = productServiceContent.replace(/import productFirebaseService from '\.\/product\.firebase\.service';\n/, "");
-        productServiceContent = productServiceContent.replace(/    case 'firebase':\n      return productFirebaseService;\n/, "");
+        productServiceContent = productServiceContent.replace(
+          /import productFirebaseService from '\.\/product\.firebase\.service';\n/,
+          "",
+        );
+        productServiceContent = productServiceContent.replace(
+          /    case 'firebase':\n      return productFirebaseService;\n/,
+          "",
+        );
       }
       await fs.writeFile(productServicePath, productServiceContent);
     }
 
     // User Service
-    const userServicePath = path.join(projectDir, "src/modules/users/infrastructure/user.service.ts");
+    const userServicePath = path.join(
+      projectDir,
+      "src/modules/users/infrastructure/user.service.ts",
+    );
     if (await pathExists(userServicePath)) {
       let userServiceContent = await fs.readFile(userServicePath, "utf-8");
       if (!useFirebase || !firebaseModules.includes("firestore")) {
-        userServiceContent = userServiceContent.replace(/import userFirebaseService from '\.\/user\.firebase\.service';\n/, "");
-        userServiceContent = userServiceContent.replace(/    case 'firebase':\n      return userFirebaseService;\n/, "");
+        userServiceContent = userServiceContent.replace(
+          /import userFirebaseService from '\.\/user\.firebase\.service';\n/,
+          "",
+        );
+        userServiceContent = userServiceContent.replace(
+          /    case 'firebase':\n      return userFirebaseService;\n/,
+          "",
+        );
       }
       await fs.writeFile(userServicePath, userServiceContent);
     }
 
     // Adjust firebase exports index if firebase is kept but some modules are pruned
     if (useFirebase) {
-      const firebaseIndexPath = path.join(projectDir, "src/modules/firebase/index.ts");
+      const firebaseIndexPath = path.join(
+        projectDir,
+        "src/modules/firebase/index.ts",
+      );
       if (await pathExists(firebaseIndexPath)) {
         let indexContent = await fs.readFile(firebaseIndexPath, "utf-8");
         if (!firebaseModules.includes("firestore")) {
-          indexContent = indexContent.replace(/export \{ default as firestoreService \} from '\.\/infrastructure\/firestore\.service';\n/, "");
+          indexContent = indexContent.replace(
+            /export \{ default as firestoreService \} from '\.\/infrastructure\/firestore\.service';\n/,
+            "",
+          );
         }
         if (!firebaseModules.includes("storage")) {
-          indexContent = indexContent.replace(/export \{ default as storageService \} from '\.\/infrastructure\/storage\.service';\n/, "");
+          indexContent = indexContent.replace(
+            /export \{ default as storageService \} from '\.\/infrastructure\/storage\.service';\n/,
+            "",
+          );
+        }
+        if (!firebaseModules.includes('auth')) {
+          indexContent = indexContent.replace(
+            /export \{ default as authenticationService \} from '\.\/infrastructure\/authentication\.service';\n/,
+            "",
+          );
         }
         await fs.writeFile(firebaseIndexPath, indexContent);
       }
@@ -457,19 +623,30 @@ export async function scaffoldProject(
 
 📂 Project location: ${projectDir}
 📦 Project name: ${projectName}
-📦 Package manager: ${packageManager}
+🛠️ Package manager: ${packageManager}
 
 Next steps:
   cd ${projectDir}
-  ${PM_COMMANDS[packageManager as keyof typeof PM_COMMANDS].run(
+
+  ${installDeps ? "" : chalk.yellow("Install dependencies")}
+    • ${installDeps ? "" : PM_COMMANDS[packageManager as keyof typeof PM_COMMANDS].install}
+    • ${PM_COMMANDS[packageManager as keyof typeof PM_COMMANDS].run(
     "start",
   )}   # Start Metro bundler
-  ${PM_COMMANDS[packageManager as keyof typeof PM_COMMANDS].run(
-    "ios",
-  )} # Run on iOS
-  ${PM_COMMANDS[packageManager as keyof typeof PM_COMMANDS].run(
+
+  ${chalk.green("Run instructions for Android:")}
+    • ${PM_COMMANDS[packageManager as keyof typeof PM_COMMANDS].run(
     "android",
   )} # Run on Android
+
+  ${chalk.blue("Run instructions for iOS:")}
+    • Install Cocoapods
+      • ${podInstall ? "" : PM_COMMANDS[packageManager as keyof typeof PM_COMMANDS].run("pod-cocoa")} # Install ruby Gems (iOS)
+      • ${podInstall ? "" : PM_COMMANDS[packageManager as keyof typeof PM_COMMANDS].run("pod-install")} # Install CocoaPods
+
+    • ${PM_COMMANDS[packageManager as keyof typeof PM_COMMANDS].run(
+    "ios",
+  )} # Run on iOS
 `;
 
     return { success: true, output };
