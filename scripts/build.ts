@@ -5,7 +5,7 @@ import path from "path";
 console.log("🚀 Building CLI with Bun...");
 
 const result = await Bun.build({
-  entrypoints: ["./src/cli.tsx"],
+  entrypoints: ["./src/ui/tui.tsx"],
   outdir: "./bin",
   target: "node",
   minify: true,

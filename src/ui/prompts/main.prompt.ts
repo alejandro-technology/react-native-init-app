@@ -2,13 +2,13 @@ import chalk from "chalk";
 import enquirer from "enquirer";
 import path from "path";
 
-import type { PromptResult } from "./types.js";
-import { CLEAN_OPTIONS } from "./constants.js";
+import type { PromptResult } from "../../domain/project/project.model.js";
+import { CLEAN_OPTIONS } from "../../domain/constants.js";
 import {
   validateProjectName,
   validateBundleId,
   validateDirectory,
-} from "./validators.js";
+} from "../../domain/project/project.validators.js";
 
 function printHeader(): void {
   console.log(chalk.cyan("\n⚡ Create React Native Init App\n"));

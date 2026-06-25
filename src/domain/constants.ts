@@ -1,5 +1,4 @@
-import type { CleanOption } from "./types.js";
-
+import type { CleanOption } from "./command/command.model.js";
 export const VERSION = "1.0.1";
 export const RN_VERSION = "0.84.0";
 

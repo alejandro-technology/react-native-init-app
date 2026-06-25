@@ -1,6 +1,6 @@
 import React from "react";
 import { Box, Text } from "ink";
-import { PROGRESS_BAR_WIDTH } from "../constants.js";
+import { PROGRESS_BAR_WIDTH } from "../../domain/constants.js";
 
 interface ProgressBarProps {
   current: number;

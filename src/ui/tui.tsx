@@ -4,9 +4,9 @@ import React from "react";
 import { render } from "ink";
 import chalk from "chalk";
 
-import { runPrompt } from "./prompts.js";
+import { runPrompt } from "./prompts/main.prompt.js";
 import { App } from "./components/App.js";
-import type { CommandType } from "./types.js";
+import type { CommandType } from "../domain/command/command.model.js";
 
 async function main() {
   try {

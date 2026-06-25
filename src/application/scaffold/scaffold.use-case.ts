@@ -2,7 +2,9 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { execa } from "execa";
 import chalk from "chalk";
-import { PM_COMMANDS } from "./constants.js";
+import { PM_COMMANDS } from "../../domain/constants.js";
+import type { PmCommandType } from "../../domain/project/project.model.js";
+import type { ScaffoldOptions } from "../../domain/scaffold/scaffold.model.js";
 
 const FILES_TO_COPY = [
   "__mocks__",
@@ -96,27 +98,6 @@ function patchAndroidAppGradle(content: string, bundleId: string) {
     `$1"${bundleId}"`,
   );
   return next;
-}
-
-export interface ScaffoldOptions {
-  projectName: string;
-  bundleId: string;
-  directory: string;
-  packageManager: string;
-  installDeps: boolean;
-  podInstall: boolean;
-  useClaude: boolean;
-  useOpencode: boolean;
-  useTrae: boolean;
-  useFirebase: boolean;
-  firebaseModules: string[];
-  templatePath: string;
-  onProgress?: (
-    step: number,
-    total: number,
-    message: string,
-    log?: string,
-  ) => void;
 }
 
 async function pathExists(filePath: string) {
@@ -625,28 +606,18 @@ export async function scaffoldProject(
 📦 Project name: ${projectName}
 🛠️ Package manager: ${packageManager}
 
-Next steps:
+${chalk.yellow("Next steps:")}
   cd ${projectDir}
 
-  ${installDeps ? "" : chalk.yellow("Install dependencies")}
-    • ${installDeps ? "" : PM_COMMANDS[packageManager as keyof typeof PM_COMMANDS].install}
-    • ${PM_COMMANDS[packageManager as keyof typeof PM_COMMANDS].run(
-    "start",
-  )}   # Start Metro bundler
+  ${generateNextStepInstall(installDeps, packageManager as PmCommandType)}
 
   ${chalk.green("Run instructions for Android:")}
     • ${PM_COMMANDS[packageManager as keyof typeof PM_COMMANDS].run(
     "android",
-  )} # Run on Android
+  )}   # Run on Android
 
   ${chalk.blue("Run instructions for iOS:")}
-    • Install Cocoapods
-      • ${podInstall ? "" : PM_COMMANDS[packageManager as keyof typeof PM_COMMANDS].run("pod-cocoa")} # Install ruby Gems (iOS)
-      • ${podInstall ? "" : PM_COMMANDS[packageManager as keyof typeof PM_COMMANDS].run("pod-install")} # Install CocoaPods
-
-    • ${PM_COMMANDS[packageManager as keyof typeof PM_COMMANDS].run(
-    "ios",
-  )} # Run on iOS
+    ${generateNextStepIos(podInstall, packageManager as PmCommandType)}
 `;
 
     return { success: true, output };
@@ -654,4 +625,24 @@ Next steps:
     const errorMessage = error instanceof Error ? error.message : String(error);
     return { success: false, output: "", error: errorMessage };
   }
+}
+
+function generateNextStepInstall(installDeps: boolean, packageManager: PmCommandType) {
+  if (!installDeps) {
+    return `${chalk.yellow("Install dependencies")}
+      • ${PM_COMMANDS[packageManager].install}
+      • ${PM_COMMANDS[packageManager].run("start")}   # Start Metro bundler`;
+  }
+  return `• ${PM_COMMANDS[packageManager].run("start")}   # Start Metro bundler`;
+}
+
+function generateNextStepIos(podInstall: boolean, packageManager: PmCommandType) {
+  if (!podInstall) {
+    return `• Install Cocoapods
+      • ${PM_COMMANDS[packageManager].run("pod-cocoa")}     # Install ruby Gems (iOS)
+      • ${PM_COMMANDS[packageManager].run("pod-install")}   # Install CocoaPods
+    
+    • ${PM_COMMANDS[packageManager].run("ios")}       # Run on iOS`;
+  }
+  return `• ${PM_COMMANDS[packageManager].run("ios")}       # Run on iOS`;
 }

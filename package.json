@@ -10,7 +10,7 @@
   },
   "scripts": {
     "clean": "rm -rf bin/*",
-    "dev": "bun src/cli.tsx",
+    "dev": "bun src/ui/tui.tsx",
     "build": "bun scripts/build.ts",
     "prepublishOnly": "bun run build",
     "test": "jest",

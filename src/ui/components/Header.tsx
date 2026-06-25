@@ -1,7 +1,7 @@
 import React from "react";
 import { Box, Text } from "ink";
 import chalk from "chalk";
-import { VERSION } from "../constants.js";
+import { VERSION } from "../../domain/constants.js";
 
 export const Header: React.FC = () => {
   return (

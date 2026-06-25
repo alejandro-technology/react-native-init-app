@@ -4,15 +4,16 @@ import chalk from "chalk";
 
 import { ProgressBar } from "./ProgressBar.js";
 import { StepList } from "./StepList.js";
-import { runCommand } from "../commands.js";
+import { runCommand } from "../../application/commands/run-command.use-case.js";
 import {
   VERSION,
   RN_VERSION,
   SCAFFOLD_STEPS,
-} from "../constants.js";
-import type { CommandType, ScaffoldData } from "../types.js";
-import { downloadTemplate, cleanupTempDir } from "../downloader.js";
-import { scaffoldProject } from "../scaffold.js";
+} from "../../domain/constants.js";
+import type { CommandType } from "../../domain/command/command.model.js";
+import type { ProjectConfig as ScaffoldData } from "../../domain/project/project.model.js";
+import { GithubTemplateRepository } from "../../infrastructure/template/github-template.repository.js";
+import { scaffoldProject } from "../../application/scaffold/scaffold.use-case.js";
 
 interface AppProps {
   command: CommandType;
@@ -59,7 +60,8 @@ export const App: React.FC<AppProps> = ({
           // Clear output for new command
           setOutput("");
           
-          const downloadResult = await downloadTemplate({
+          const templateRepo = new GithubTemplateRepository();
+          const downloadResult = await templateRepo.download({
             projectName: scaffoldData.projectName,
             onProgress: (msg) => handleStepChange(0, 7, msg),
           });
@@ -76,7 +78,7 @@ export const App: React.FC<AppProps> = ({
             onProgress: handleStepChange,
           });
 
-          await cleanupTempDir(downloadResult.tempDir);
+          await templateRepo.cleanup(downloadResult.tempDir);
 
           if (!result.success && result.error) {
             setOutput(`❌ Error during scaffold: ${result.error}`);

@@ -1,7 +1,7 @@
 import { execa } from "execa";
 
-import type { CommandType, ProgressCallback } from "./types.js";
-import { CLEAN_OPTIONS } from "./constants.js";
+import type { CommandType, ProgressCallback } from "../../domain/command/command.model.js";
+import { CLEAN_OPTIONS } from "../../domain/constants.js";
 
 interface CommandResult {
   success: boolean;
