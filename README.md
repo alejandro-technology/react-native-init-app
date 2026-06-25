@@ -1,6 +1,6 @@
-# Create React Native Init App ⚡
+# Create React Native TUI ⚡
 
-![npm](https://img.shields.io/npm/v/create-react-native-init-app)
+![npm](https://img.shields.io/npm/v/create-react-native-tui)
 ![license](https://img.shields.io/badge/license-MIT-green)
 ![react-native](https://img.shields.io/badge/react--native-cli-blue)
 
@@ -22,15 +22,15 @@ Perfect for:
 You can initialize a new project directly without installing the CLI globally:
 
 ```bash
-npm init react-native-init-app
+npm init react-native-tui
 ```
 
 ### Using npx or bunx
 
 ```bash
-bunx create-react-native-init-app
+bunx create-react-native-tui
 # or
-npx create-react-native-init-app
+npx create-react-native-tui
 ```
 
 ### Global Installation
@@ -38,11 +38,11 @@ npx create-react-native-init-app
 If you prefer to have the commands available everywhere:
 
 ```bash
-npm install -g create-react-native-init-app
+npm install -g create-react-native-tui
 
 # Now you can use the following commands:
 rnia
-react-native-init-app
+react-native-tui
 ```
 
 ## ✨ Features
@@ -59,7 +59,7 @@ react-native-init-app
 
 ```bash
 # Interactive mode
-npx create-react-native-init-app
+npx create-react-native-tui
 
 # Short alias (after global install)
 rnia
