@@ -110,7 +110,7 @@ export const App: React.FC<AppProps> = ({
     <Box flexDirection="column" padding={1} borderStyle="classic" borderColor="cyan">
       <Box>
         <Text bold color="cyan">
-          ⚡ Create React Native Init App
+          ⚡ React Native TUI
         </Text>
       </Box>
       <Spacer />

@@ -6,10 +6,44 @@ import chalk from "chalk";
 
 import { runPrompt } from "./prompts/main.prompt.js";
 import { App } from "./components/App.js";
+import { LogoAnimation } from "./components/LogoAnimation.js";
 import type { CommandType } from "../domain/command/command.model.js";
+
+async function showIntroAnimation(): Promise<void> {
+  if (!process.stdin.isTTY) {
+    return;
+  }
+  process.stdout.write("\n".repeat(50));
+  console.clear();
+
+  return new Promise<void>((resolve) => {
+    const { unmount } = render(
+      <LogoAnimation
+        onComplete={() => {
+          unmount();
+          process.stdout.write("\n".repeat(50));
+          console.clear();
+          
+          // Let the event loop settle and let Ink complete its async cleanup before restoring stdin
+          setTimeout(() => {
+            if (process.stdin.isTTY) {
+              process.stdin.ref();
+              process.stdin.resume();
+              try {
+                process.stdin.read();
+              } catch (e) {}
+            }
+            resolve();
+          }, 100);
+        }}
+      />
+    );
+  });
+}
 
 async function main() {
   try {
+    await showIntroAnimation();
     const { command, cleanOption, scaffoldData } = await runPrompt();
 
     // Clear screen before starting the Ink app

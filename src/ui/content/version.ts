@@ -1,7 +1,7 @@
 import { VERSION, RN_VERSION } from "../../domain/constants.js";
 
 export const VERSION_OUTPUT = `
-⚡ Create React Native Init App
+⚡ React Native TUI
 Version: ${VERSION}
 React Native Template: ${RN_VERSION}
 

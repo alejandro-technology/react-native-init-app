@@ -8,7 +8,7 @@ export const Header: React.FC = () => {
     <Box flexDirection="column" marginBottom={1}>
       <Box>
         <Text bold color="cyan">
-          ⚡ Create React Native Init App
+          ⚡ React Native TUI
         </Text>
         <Text color="gray"> v{VERSION}</Text>
       </Box>

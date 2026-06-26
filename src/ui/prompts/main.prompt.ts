@@ -11,7 +11,7 @@ import {
 } from "../../domain/project/project.validators.js";
 
 function printHeader(): void {
-  console.log(chalk.cyan("\n⚡ Create React Native Init App\n"));
+  console.log(chalk.cyan("\n⚡ React Native TUI\n"));
   console.log(
     chalk.dim("Create React Native projects with Clean Architecture\n")
   );

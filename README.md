@@ -1,4 +1,4 @@
-# Create React Native TUI ⚡
+# React Native TUI ⚡
 
 ![npm](https://img.shields.io/npm/v/create-react-native-tui)
 ![license](https://img.shields.io/badge/license-MIT-green)
