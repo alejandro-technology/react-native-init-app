@@ -150,7 +150,7 @@ export const LogoAnimation: React.FC<LogoAnimationProps> = ({ onComplete }) => {
   const logoString = renderFrame(frame);
 
   const textProgress = Math.min(1.0, Math.max(0, frame - 15) / 15);
-  const subtitle = "React Native TUI";
+  const subtitle = "REACT NATIVE TUI";
   const charsToShow = Math.floor(subtitle.length * textProgress);
   const visibleSubtitle = subtitle.slice(0, charsToShow);
 
