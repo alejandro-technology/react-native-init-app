@@ -35,7 +35,7 @@ export const CLEAN_OPTIONS: CleanOption[] = [
   },
   {
     label: "All",
-    script: "scaffold",
+    script: "clean-all",
     cleanMessage: "All caches cleaned",
     destructive: true,
   },

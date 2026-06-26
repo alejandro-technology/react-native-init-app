@@ -1,19 +1,37 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { Box, Text, Spacer } from "ink";
-import chalk from "chalk";
-
 import { ProgressBar } from "./ProgressBar.js";
 import { StepList } from "./StepList.js";
-import { runCommand } from "../../application/commands/run-command.use-case.js";
-import {
-  VERSION,
-  RN_VERSION,
-  SCAFFOLD_STEPS,
-} from "../../domain/constants.js";
+import { SCAFFOLD_STEPS } from "../../domain/constants.js";
 import type { CommandType } from "../../domain/command/command.model.js";
 import type { ProjectConfig as ScaffoldData } from "../../domain/project/project.model.js";
-import { GithubTemplateRepository } from "../../infrastructure/template/github-template.repository.js";
-import { scaffoldProject } from "../../application/scaffold/scaffold.use-case.js";
+import { runCommand } from "../../application/commands/run-command.use-case.js";
+import { runScaffold } from "../commands/scaffold.handler.js";
+import { useOutputBuffer } from "../hooks/use-output-buffer.js";
+import { VERSION_OUTPUT } from "../content/version.js";
+import { HELP_OUTPUT } from "../content/help.js";
+
+// Module-level constants (no re-allocation per render)
+const STATUS_CONFIG = {
+  running: { color: "yellow", text: "⏳ Running" },
+  success: { color: "green", text: "✅ Success" },
+  error: { color: "red", text: "❌ Error" },
+} as const;
+
+const COMMAND_LABELS: Record<CommandType, string> = {
+  scaffold: "Scaffold New Project",
+  clean: "Clean",
+  "pod-install": "Pod Install",
+  "run-android": "Run Android",
+  version: "Version Info",
+  help: "Help",
+};
+
+// Static commands that need no async work
+const STATIC_COMMANDS: Partial<Record<CommandType, { output: string }>> = {
+  version: { output: VERSION_OUTPUT },
+  help: { output: HELP_OUTPUT },
+};
 
 interface AppProps {
   command: CommandType;
@@ -26,160 +44,70 @@ export const App: React.FC<AppProps> = ({
   cleanOption,
   scaffoldData,
 }) => {
-  const [output, setOutput] = useState<string>("");
-  const [status, setStatus] = useState<"running" | "success" | "error">(
-    "running"
-  );
+  const [output, setOutput] = useState("");
+  const [status, setStatus] = useState<"running" | "success" | "error">("running");
   const [currentStep, setCurrentStep] = useState(0);
   const [totalSteps, setTotalSteps] = useState(1);
   const [stepMessage, setStepMessage] = useState("");
   const [showSteps, setShowSteps] = useState(false);
 
-  const handleStepChange = useCallback(
-    (step: number, total: number, message: string, log?: string) => {
-      setCurrentStep(step);
-      setTotalSteps(total);
-      if (message) setStepMessage(message);
-      if (log) {
-        setOutput((prev) => {
-          const newOutput = prev + log;
-          const lines = newOutput.split("\n");
-          // Limit to last 10 lines to keep UI stable
-          return lines.slice(-10).join("\n");
-        });
-      }
-    },
-    []
-  );
+  const { append, view, clear } = useOutputBuffer(10);
 
-  useEffect(() => {
-    if (command === "scaffold" && scaffoldData) {
-      setShowSteps(true);
-      const executeScaffold = async () => {
-        try {
-          // Clear output for new command
-          setOutput("");
-          
-          const templateRepo = new GithubTemplateRepository();
-          const downloadResult = await templateRepo.download({
-            projectName: scaffoldData.projectName,
-            onProgress: (msg) => handleStepChange(0, 7, msg),
-          });
-
-          if (!downloadResult.success) {
-            setOutput(`❌ Failed to download template: ${downloadResult.error}`);
-            setStatus("error");
-            return;
-          }
-
-          const result = await scaffoldProject({
-            ...scaffoldData,
-            templatePath: downloadResult.templatePath,
-            onProgress: handleStepChange,
-          });
-
-          await templateRepo.cleanup(downloadResult.tempDir);
-
-          if (!result.success && result.error) {
-            setOutput(`❌ Error during scaffold: ${result.error}`);
-          } else {
-            setOutput(result.output);
-          }
-          setStatus(result.success ? "success" : "error");
-        } catch (err) {
-          setOutput(err instanceof Error ? err.message : String(err));
-          setStatus("error");
-        }
-      };
-      executeScaffold();
-    } else if (command === "version") {
-      setOutput(`
-⚡ Create React Native Init App
-Version: ${VERSION}
-React Native Template: ${RN_VERSION}
-
-Usage:
-  npm init react-native-init-app
-  bun init react-native-init-app
-  npx create-react-native-init-app
-  bunx create-react-native-init-app
-  rnia
-
-Run 'create-react-native-init-app --help' for more information.
-`);
-      setStatus("success");
-    } else if (command === "help") {
-      setOutput(`
-⚡ Available Commands:
-
-🆕  scaffold    - Create new React Native project from template
-🧹  clean       - Clean caches and build folders
-   • Android    - Clean Android build folder
-   • iOS        - Clean iOS build folder
-   • Node Mods  - Remove node_modules
-   • Watchman   - Clear Watchman cache
-   • All        - Clean everything
-📦  pod-install - Install CocoaPods dependencies
-🤖  run-android - Run app on Android device/emulator
-
-Usage:
-  npm init react-native-init-app
-  npx create-react-native-init-app
-  bunx create-react-native-init-app
-  rnia
-
-Examples:
-  npm init react-native-init-app
-  bunx create-react-native-init-app --help
-`);
-      setStatus("success");
-    } else {
-      runCommand(command, cleanOption, handleStepChange)
-        .then((result) => {
-          setOutput(result.output);
-          setStatus(result.success ? "success" : "error");
-        })
-        .catch((err) => {
-          setOutput(err.message);
-          setStatus("error");
-        });
-    }
-  }, [command, cleanOption, scaffoldData, handleStepChange]);
-
-  const statusColor =
-    status === "running"
-      ? chalk.yellow
-      : status === "success"
-      ? chalk.green
-      : chalk.red;
-  const statusText =
-    status === "running"
-      ? "⏳ Running"
-      : status === "success"
-      ? "✅ Success"
-      : "❌ Error";
-
-  const commandLabels: Record<CommandType, string> = {
-    scaffold: scaffoldData
-      ? `Scaffold: ${scaffoldData.projectName}`
-      : "Scaffold New Project",
-    clean: cleanOption ? `Clean ${cleanOption}` : "Clean",
-    "pod-install": "Pod Install",
-    "run-android": "Run Android",
-    version: "Version Info",
-    help: "Help",
+  const handleProgress = (step: number, total: number, message: string, log?: string) => {
+    setCurrentStep(step);
+    setTotalSteps(total);
+    if (message) setStepMessage(message);
+    if (log) append(log);
   };
 
-  const dynamicSteps =
-    command === "scaffold" ? SCAFFOLD_STEPS : ["Processing..."];
+  useEffect(() => {
+    const run = async () => {
+      clear();
+      setShowSteps(false);
+      setStatus("running");
+
+      // Static commands (version, help)
+      const staticCmd = STATIC_COMMANDS[command];
+      if (staticCmd) {
+        setOutput(staticCmd.output);
+        setStatus("success");
+        return;
+      }
+
+      // Show step UI for long-running commands
+      setShowSteps(command === "scaffold");
+
+      try {
+        let result: { output: string; success: boolean };
+
+        if (command === "scaffold" && scaffoldData) {
+          result = await runScaffold(scaffoldData, handleProgress, append);
+        } else {
+          result = await runCommand(command, cleanOption, handleProgress);
+        }
+
+        setOutput(result.output);
+        setStatus(result.success ? "success" : "error");
+      } catch (err) {
+        setOutput(err instanceof Error ? err.message : String(err));
+        setStatus("error");
+      }
+    };
+    run();
+  }, [command, cleanOption, scaffoldData]);
+
+  const { color, text } = STATUS_CONFIG[status];
+  const cmdLabel =
+    scaffoldData && command === "scaffold"
+      ? `Scaffold: ${scaffoldData.projectName}`
+      : cleanOption && command === "clean"
+        ? `Clean ${cleanOption}`
+        : COMMAND_LABELS[command];
+
+  const steps = showSteps ? SCAFFOLD_STEPS : ["Processing..."];
 
   return (
-    <Box
-      flexDirection="column"
-      padding={1}
-      borderStyle="classic"
-      borderColor="cyan"
-    >
+    <Box flexDirection="column" padding={1} borderStyle="classic" borderColor="cyan">
       <Box>
         <Text bold color="cyan">
           ⚡ Create React Native Init App
@@ -188,22 +116,18 @@ Examples:
       <Spacer />
       <Box>
         <Text color="gray">Command: </Text>
-        <Text bold>{commandLabels[command]}</Text>
+        <Text bold>{cmdLabel}</Text>
       </Box>
       <Box>
         <Text color="gray">Status: </Text>
-        <Text color={statusColor(status)}>{statusText}</Text>
+        <Text color={color}>{text}</Text>
       </Box>
       {showSteps && status === "running" && (
         <>
           <Spacer />
-          <StepList steps={dynamicSteps} currentStep={currentStep} />
+          <StepList steps={steps} currentStep={currentStep} />
           <Spacer />
-          <ProgressBar
-            current={currentStep}
-            total={totalSteps}
-            label={stepMessage}
-          />
+          <ProgressBar current={currentStep} total={totalSteps} label={stepMessage} />
         </>
       )}
       <Spacer />
@@ -218,7 +142,9 @@ Examples:
           borderColor="gray"
           minHeight={18}
         >
-          <Text>{output || (status === "running" ? "Processing..." : "")}</Text>
+          <Text>
+            {status === "running" ? (view || "Processing...") : (output || view)}
+          </Text>
         </Box>
       </Box>
       <Spacer />

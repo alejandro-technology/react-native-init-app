@@ -1,12 +1,26 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { execa } from "execa";
 import chalk from "chalk";
 import { PM_COMMANDS } from "../../domain/constants.js";
 import type { PmCommandType } from "../../domain/project/project.model.js";
 import type { ScaffoldOptions } from "../../domain/scaffold/scaffold.model.js";
+import { Progress } from "../commands/progress.js";
+import type { ScaffoldContext } from "./scaffold.context.js";
+import { initReactNative } from "./steps/init-react-native.step.js";
+import { deleteDefaultFiles } from "./steps/delete-default-files.step.js";
+import { copyTemplateFiles } from "./steps/copy-template-files.step.js";
+import { copyFirebaseFiles } from "./steps/copy-firebase-files.step.js";
+import { mergePackageJson } from "./steps/merge-package-json.step.js";
+import { pruneBackendModules } from "./steps/prune-backend-modules.step.js";
+import { patchDiInjectors } from "./steps/patch-di-injectors.step.js";
+import { configureGit } from "./steps/configure-git.step.js";
+import { installDependencies } from "./steps/install-dependencies.step.js";
 
-const FILES_TO_COPY = [
+// ---------------------------------------------------------------------------
+// Constants (shared with step files via import)
+// ---------------------------------------------------------------------------
+
+export const FILES_TO_COPY = [
   "__mocks__",
   "__tests__",
   ".bundle",
@@ -43,18 +57,18 @@ const FILES_TO_COPY = [
   "tsconfig.json",
 ];
 
-const FILES_TO_DELETE = ["App.tsx", "src", "__tests__"];
+export const FILES_TO_DELETE = ["App.tsx", "src", "__tests__"];
 
-const CODE_AGENT_FILES = {
+export const CODE_AGENT_FILES = {
   claude: ["CLAUDE.md", ".claude"],
   opencode: ["AGENTS.md", "opencode.json", ".opencode"],
   trae: [".trae", "TRAE.md"],
 } as const;
 
-const TEMPLATE_NAME = "rncatemplate";
-const TEMPLATE_BUNDLE_ID = "com.alejandrotechnology.rncatemplate";
+export const TEMPLATE_NAME = "rncatemplate";
+export const TEMPLATE_BUNDLE_ID = "com.alejandrotechnology.rncatemplate";
 
-const FIREBASE_FILES = (projectName: string) =>
+export const FIREBASE_FILES = (projectName: string) =>
   [
     // Android
     { src: "android/build.gradle", dest: "android/build.gradle" },
@@ -75,7 +89,29 @@ const FIREBASE_FILES = (projectName: string) =>
     },
   ] as const;
 
-async function replaceInFileIfExists(
+// ---------------------------------------------------------------------------
+// Utility functions (shared with step files via import)
+// ---------------------------------------------------------------------------
+
+export async function pathExists(filePath: string) {
+  try {
+    await fs.access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function readJson(filePath: string) {
+  const content = await fs.readFile(filePath, "utf-8");
+  return JSON.parse(content);
+}
+
+export async function writeJson(filePath: string, data: any) {
+  await fs.writeFile(filePath, JSON.stringify(data, null, 2));
+}
+
+export async function replaceInFileIfExists(
   filePath: string,
   replacer: (content: string) => string,
 ) {
@@ -87,7 +123,7 @@ async function replaceInFileIfExists(
   }
 }
 
-function patchAndroidAppGradle(content: string, bundleId: string) {
+export function patchAndroidAppGradle(content: string, bundleId: string) {
   let next = content;
   next = next.replace(
     /(^\s*namespace\s+)(["'])[^\r\n"']+\2/m,
@@ -100,506 +136,42 @@ function patchAndroidAppGradle(content: string, bundleId: string) {
   return next;
 }
 
-async function pathExists(filePath: string) {
-  try {
-    await fs.access(filePath);
-    return true;
-  } catch {
-    return false;
+// ---------------------------------------------------------------------------
+// Success output helpers
+// ---------------------------------------------------------------------------
+
+function generateNextStepInstall(
+  installDeps: boolean,
+  packageManager: PmCommandType,
+) {
+  if (!installDeps) {
+    return `${chalk.yellow("Install dependencies")}
+      • ${PM_COMMANDS[packageManager].install}
+      • ${PM_COMMANDS[packageManager].run("start")}   # Start Metro bundler`;
   }
+  return `• ${PM_COMMANDS[packageManager].run("start")}   # Start Metro bundler`;
 }
 
-async function readJson(filePath: string) {
-  const content = await fs.readFile(filePath, "utf-8");
-  return JSON.parse(content);
+function generateNextStepIos(
+  podInstall: boolean,
+  packageManager: PmCommandType,
+) {
+  if (!podInstall) {
+    return `• Install Cocoapods
+      • ${PM_COMMANDS[packageManager].run("pod-cocoa")}     # Install ruby Gems (iOS)
+      • ${PM_COMMANDS[packageManager].run("pod-install")}   # Install CocoaPods
+    
+    • ${PM_COMMANDS[packageManager].run("ios")}       # Run on iOS`;
+  }
+  return `• ${PM_COMMANDS[packageManager].run("ios")}       # Run on iOS`;
 }
 
-async function writeJson(filePath: string, data: any) {
-  await fs.writeFile(filePath, JSON.stringify(data, null, 2));
-}
+function buildSuccessOutput(ctx: ScaffoldContext): string {
+  const { projectDir, projectName, packageManager, installDeps, podInstall } =
+    ctx;
+  const pm = packageManager as PmCommandType;
 
-export async function scaffoldProject(
-  options: ScaffoldOptions,
-): Promise<{ success: boolean; output: string; error?: string }> {
-  const {
-    projectName,
-    bundleId,
-    directory,
-    packageManager,
-    installDeps,
-    podInstall,
-    aiProviders,
-    backend,
-    templatePath,
-    onProgress,
-  } = options;
-
-  const projectDir = path.resolve(directory);
-  const totalSteps =
-    8 +
-    (installDeps ? 1 : 0) +
-    (podInstall && process.platform === "darwin" ? 1 : 0);
-  let step = 0;
-
-  const runStreamed = async (
-    cmd: string,
-    args: string[],
-    currentStep: number,
-    message: string,
-    cwd?: string,
-  ) => {
-    const childProcess = execa(cmd, args, {
-      cwd: cwd || process.cwd(),
-      cleanup: true,
-    });
-
-    childProcess.stdout?.on("data", (data) => {
-      onProgress?.(currentStep, totalSteps, message, data.toString());
-    });
-    childProcess.stderr?.on("data", (data) => {
-      onProgress?.(currentStep, totalSteps, message, data.toString());
-    });
-
-    return childProcess;
-  };
-
-  try {
-    const initMessage = "Initializing React Native project...";
-    onProgress?.(step, totalSteps, initMessage);
-
-    await runStreamed(
-      PM_COMMANDS[packageManager].exec,
-      [
-        "@react-native-community/cli",
-        "init",
-        projectName,
-        "--directory",
-        projectDir,
-        "--package-name",
-        bundleId,
-        "--skip-install",
-        "--version",
-        "0.83.4",
-      ],
-      step++,
-      initMessage,
-      // No cwd here, run in current dir
-    );
-
-    onProgress?.(step++, totalSteps, "Cleaning up default files...");
-
-    for (const file of FILES_TO_DELETE) {
-      const filePath = path.join(projectDir, file);
-      if (await pathExists(filePath)) {
-        await fs.rm(filePath, { recursive: true, force: true });
-      }
-    }
-
-    onProgress?.(step++, totalSteps, "Copying template files...");
-
-    const extraFiles: string[] = [
-      ...(aiProviders.includes("claude") ? CODE_AGENT_FILES.claude : []),
-      ...(aiProviders.includes("opencode") ? CODE_AGENT_FILES.opencode : []),
-      ...(aiProviders.includes("trae") ? CODE_AGENT_FILES.trae : []),
-    ];
-
-    const filesToCopy = Array.from(new Set([...FILES_TO_COPY, ...extraFiles]));
-
-    for (const file of filesToCopy) {
-      let templateFile = file;
-
-      const useAgent = aiProviders.length > 0;
-      const isAgentFolder =
-        file.includes(".claude") ||
-        file.includes(".opencode") ||
-        file.includes(".trae");
-      if (useAgent && isAgentFolder) {
-        templateFile = ".ai/";
-      }
-
-      const srcPath = path.join(templatePath, templateFile);
-      const destPath = path.join(projectDir, file);
-      if (await pathExists(srcPath)) {
-        await fs.cp(srcPath, destPath, { recursive: true });
-      }
-    }
-
-    const isFirebase = backend?.name === "firebase";
-    const activeBackendModules = backend?.modules ?? [];
-
-    // Copy Firebase files separately (they have different src/dest paths)
-    if (isFirebase) {
-      for (const { src, dest } of FIREBASE_FILES(projectName)) {
-        const srcPath = path.join(templatePath, src);
-        const destPath = path.join(projectDir, dest);
-        if (await pathExists(srcPath)) {
-          await fs.cp(srcPath, destPath, { recursive: true });
-        }
-      }
-
-      // Replace Firebase files with project name
-      await replaceInFileIfExists(
-        path.join(projectDir, "ios/Podfile"),
-        (content) => content.replaceAll(TEMPLATE_NAME, projectName),
-      );
-
-      await replaceInFileIfExists(
-        path.join(projectDir, `ios/${projectName}/AppDelegate.swift`),
-        (content) => content.replaceAll(TEMPLATE_NAME, projectName),
-      );
-
-      await replaceInFileIfExists(
-        path.join(projectDir, "ios/GoogleService-Info.plist"),
-        (content) => content.replaceAll(TEMPLATE_BUNDLE_ID, bundleId),
-      );
-
-      // Android files
-      await replaceInFileIfExists(
-        path.join(projectDir, "android/build.gradle"),
-        (content) => content.replaceAll(TEMPLATE_NAME, projectName),
-      );
-
-      await replaceInFileIfExists(
-        path.join(projectDir, "android/app/build.gradle"),
-        (content) =>
-          patchAndroidAppGradle(
-            content.replaceAll(TEMPLATE_NAME, projectName),
-            bundleId,
-          ),
-      );
-
-      await replaceInFileIfExists(
-        path.join(projectDir, "android/app/google-services.json"),
-        (content) => content.replaceAll(TEMPLATE_BUNDLE_ID, bundleId),
-      );
-    }
-
-    await replaceInFileIfExists(
-      path.join(projectDir, ".github/workflows/ios-build.yml"),
-      (content) => content.replaceAll(TEMPLATE_NAME, projectName),
-    );
-
-    onProgress?.(step++, totalSteps, "Merging package.json...");
-
-    const templatePackageJson = await readJson(
-      path.join(templatePath, "package.json"),
-    );
-    const newPackageJsonPath = path.join(projectDir, "package.json");
-    const newPackageJson = await readJson(newPackageJsonPath);
-
-    // Prune Firebase dependencies if needed
-    const templateDeps = { ...templatePackageJson.dependencies };
-    if (!isFirebase) {
-      Object.keys(templateDeps).forEach((dep) => {
-        if (dep.startsWith("@react-native-firebase/")) {
-          delete templateDeps[dep];
-        }
-      });
-    } else {
-      if (!activeBackendModules.includes("auth")) {
-        delete templateDeps["@react-native-firebase/auth"];
-      }
-      if (!activeBackendModules.includes("firestore")) {
-        delete templateDeps["@react-native-firebase/firestore"];
-      }
-      if (!activeBackendModules.includes("storage")) {
-        delete templateDeps["@react-native-firebase/storage"];
-      }
-      // @react-native-firebase/app is always kept if useFirebase is true
-    }
-
-    const mergedPackageJson = {
-      ...newPackageJson,
-      name: projectName.toLowerCase().replace(/-/g, "_"),
-      version: templatePackageJson.version,
-      dependencies: templateDeps,
-      devDependencies: templatePackageJson.devDependencies,
-      scripts: templatePackageJson.scripts,
-      "lint-staged": templatePackageJson["lint-staged"],
-    };
-
-    await writeJson(newPackageJsonPath, mergedPackageJson);
-
-    const appJsonPath = path.join(projectDir, "app.json");
-    const appJson = await readJson(appJsonPath);
-    appJson.name = projectName;
-    appJson.displayName = projectName;
-    await writeJson(appJsonPath, appJson);
-
-    onProgress?.(step++, totalSteps, "Pruning unused modules...");
-    if (!isFirebase) {
-      // Remove all firebase infrastructure files
-      await fs.rm(path.join(projectDir, "src/modules/firebase"), {
-        recursive: true,
-        force: true,
-      });
-      await fs.rm(
-        path.join(
-          projectDir,
-          "src/modules/authentication/infrastructure/firebase-auth.service.ts",
-        ),
-        { force: true },
-      );
-      await fs.rm(
-        path.join(
-          projectDir,
-          "src/modules/products/infrastructure/product.firebase.service.ts",
-        ),
-        { force: true },
-      );
-      await fs.rm(
-        path.join(
-          projectDir,
-          "src/modules/users/infrastructure/user.firebase.service.ts",
-        ),
-        { force: true },
-      );
-
-      // Patch config
-      const configPath = path.join(projectDir, "src/config/config.ts");
-      if (await pathExists(configPath)) {
-        let configContent = await fs.readFile(configPath, "utf-8");
-        configContent = configContent.replace(
-          /export type ServiceProvider = 'http' \| 'firebase' \| 'mock';/,
-          "export type ServiceProvider = 'http' | 'mock';",
-        );
-        await fs.writeFile(configPath, configContent);
-      }
-    } else {
-      if (!activeBackendModules.includes("auth")) {
-        await fs.rm(
-          path.join(
-            projectDir,
-            "src/modules/authentication/infrastructure/firebase-auth.service.ts",
-          ),
-          { force: true },
-        );
-      }
-      if (!activeBackendModules.includes("firestore")) {
-        await fs.rm(
-          path.join(
-            projectDir,
-            "src/modules/firebase/infrastructure/firestore.service.ts",
-          ),
-          { force: true },
-        );
-        await fs.rm(
-          path.join(
-            projectDir,
-            "src/modules/firebase/application/firestore.hooks.ts",
-          ),
-          { force: true },
-        );
-        await fs.rm(
-          path.join(
-            projectDir,
-            "src/modules/firebase/domain/firestore.model.ts",
-          ),
-          { force: true },
-        );
-        await fs.rm(
-          path.join(
-            projectDir,
-            "src/modules/firebase/domain/firestore.repository.ts",
-          ),
-          { force: true },
-        );
-        await fs.rm(
-          path.join(
-            projectDir,
-            "src/modules/products/infrastructure/product.firebase.service.ts",
-          ),
-          { force: true },
-        );
-        await fs.rm(
-          path.join(
-            projectDir,
-            "src/modules/users/infrastructure/user.firebase.service.ts",
-          ),
-          { force: true },
-        );
-      }
-      if (!activeBackendModules.includes("storage")) {
-        await fs.rm(
-          path.join(
-            projectDir,
-            "src/modules/firebase/infrastructure/storage.service.ts",
-          ),
-          { force: true },
-        );
-        await fs.rm(
-          path.join(
-            projectDir,
-            "src/modules/firebase/application/storage.mutations.ts",
-          ),
-          { force: true },
-        );
-        await fs.rm(
-          path.join(
-            projectDir,
-            "src/modules/firebase/application/storage.queries.ts",
-          ),
-          { force: true },
-        );
-        await fs.rm(
-          path.join(projectDir, "src/modules/firebase/domain/storage.model.ts"),
-          { force: true },
-        );
-        await fs.rm(
-          path.join(
-            projectDir,
-            "src/modules/firebase/domain/storage.repository.ts",
-          ),
-          { force: true },
-        );
-        await fs.rm(
-          path.join(
-            projectDir,
-            "src/modules/firebase/domain/storage.adapter.ts",
-          ),
-          { force: true },
-        );
-      }
-    }
-
-    onProgress?.(step++, totalSteps, "Patching dependency injectors...");
-    // Auth Service
-    const authServicePath = path.join(
-      projectDir,
-      "src/modules/authentication/infrastructure/auth.service.ts",
-    );
-    if (await pathExists(authServicePath)) {
-      let authServiceContent = await fs.readFile(authServicePath, "utf-8");
-      if (!isFirebase || !activeBackendModules.includes("auth")) {
-        authServiceContent = authServiceContent.replace(
-          /import authFirebaseService from '\.\/firebase-auth\.service';\n/,
-          "",
-        );
-        authServiceContent = authServiceContent.replace(
-          /    case 'firebase':\n      return authFirebaseService;\n/,
-          "",
-        );
-      }
-      await fs.writeFile(authServicePath, authServiceContent);
-    }
-
-    // Product Service
-    const productServicePath = path.join(
-      projectDir,
-      "src/modules/products/infrastructure/product.service.ts",
-    );
-    if (await pathExists(productServicePath)) {
-      let productServiceContent = await fs.readFile(
-        productServicePath,
-        "utf-8",
-      );
-      if (!isFirebase || !activeBackendModules.includes("firestore")) {
-        productServiceContent = productServiceContent.replace(
-          /import productFirebaseService from '\.\/product\.firebase\.service';\n/,
-          "",
-        );
-        productServiceContent = productServiceContent.replace(
-          /    case 'firebase':\n      return productFirebaseService;\n/,
-          "",
-        );
-      }
-      await fs.writeFile(productServicePath, productServiceContent);
-    }
-
-    // User Service
-    const userServicePath = path.join(
-      projectDir,
-      "src/modules/users/infrastructure/user.service.ts",
-    );
-    if (await pathExists(userServicePath)) {
-      let userServiceContent = await fs.readFile(userServicePath, "utf-8");
-      if (!isFirebase || !activeBackendModules.includes("firestore")) {
-        userServiceContent = userServiceContent.replace(
-          /import userFirebaseService from '\.\/user\.firebase\.service';\n/,
-          "",
-        );
-        userServiceContent = userServiceContent.replace(
-          /    case 'firebase':\n      return userFirebaseService;\n/,
-          "",
-        );
-      }
-      await fs.writeFile(userServicePath, userServiceContent);
-    }
-
-    // Adjust firebase exports index if firebase is kept but some modules are pruned
-    if (isFirebase) {
-      const firebaseIndexPath = path.join(
-        projectDir,
-        "src/modules/firebase/index.ts",
-      );
-      if (await pathExists(firebaseIndexPath)) {
-        let indexContent = await fs.readFile(firebaseIndexPath, "utf-8");
-        if (!activeBackendModules.includes("firestore")) {
-          indexContent = indexContent.replace(
-            /export \{ default as firestoreService \} from '\.\/infrastructure\/firestore\.service';\n/,
-            "",
-          );
-        }
-        if (!activeBackendModules.includes("storage")) {
-          indexContent = indexContent.replace(
-            /export \{ default as storageService \} from '\.\/infrastructure\/storage\.service';\n/,
-            "",
-          );
-        }
-        if (!activeBackendModules.includes('auth')) {
-          indexContent = indexContent.replace(
-            /export \{ default as authenticationService \} from '\.\/infrastructure\/authentication\.service';\n/,
-            "",
-          );
-        }
-        await fs.writeFile(firebaseIndexPath, indexContent);
-      }
-    }
-
-    onProgress?.(step, totalSteps, "Configuring git...");
-
-    try {
-      await execa("git", ["init"], { cwd: projectDir });
-      await execa("git", ["add", "."], { cwd: projectDir });
-      await execa(
-        "git",
-        ["commit", "-m", "chore: apply OpenCode Clean Architecture template"],
-        { cwd: projectDir },
-      );
-    } catch {
-      // Git skipped if not available
-    }
-    step++;
-
-    if (installDeps) {
-      const pm = PM_COMMANDS[packageManager as keyof typeof PM_COMMANDS];
-      const installMessage = `Installing dependencies (${packageManager})...`;
-      onProgress?.(step, totalSteps, installMessage);
-
-      const [cmd, ...args] = pm.install.split(" ");
-      await runStreamed(cmd, args, step++, installMessage, projectDir);
-
-      if (podInstall && process.platform === "darwin") {
-        const podMessage = "Running pod install...";
-        onProgress?.(step, totalSteps, podMessage);
-        await runStreamed(
-          cmd,
-          ["run", "pod-cocoa"],
-          step,
-          podMessage,
-          projectDir,
-        );
-        await runStreamed(
-          cmd,
-          ["run", "pod-install"],
-          step,
-          podMessage,
-          projectDir,
-        );
-      }
-    }
-
-    const output = `
+  return `
 ✅ Setup complete!
 
 📂 Project location: ${projectDir}
@@ -609,40 +181,60 @@ export async function scaffoldProject(
 ${chalk.yellow("Next steps:")}
   cd ${projectDir}
 
-  ${generateNextStepInstall(installDeps, packageManager as PmCommandType)}
+  ${generateNextStepInstall(installDeps, pm)}
 
   ${chalk.green("Run instructions for Android:")}
-    • ${PM_COMMANDS[packageManager as keyof typeof PM_COMMANDS].run(
-    "android",
-  )}   # Run on Android
+    • ${PM_COMMANDS[pm].run("android")}   # Run on Android
 
   ${chalk.blue("Run instructions for iOS:")}
-    ${generateNextStepIos(podInstall, packageManager as PmCommandType)}
+    ${generateNextStepIos(podInstall, pm)}
 `;
+}
 
-    return { success: true, output };
+// ---------------------------------------------------------------------------
+// Orchestrator
+// ---------------------------------------------------------------------------
+
+export async function scaffoldProject(
+  options: ScaffoldOptions,
+): Promise<{ success: boolean; output: string; error?: string }> {
+  const projectDir = path.resolve(options.directory);
+  const isFirebase = options.backend?.name === "firebase";
+  const activeBackendModules = options.backend?.modules ?? [];
+  const totalSteps =
+    8 +
+    (options.installDeps ? 1 : 0) +
+    (options.podInstall && process.platform === "darwin" ? 1 : 0);
+  const progress = new Progress(totalSteps, options.onProgress);
+
+  const ctx: ScaffoldContext = {
+    projectDir,
+    projectName: options.projectName,
+    bundleId: options.bundleId,
+    templatePath: options.templatePath,
+    packageManager: options.packageManager,
+    installDeps: options.installDeps,
+    podInstall: options.podInstall,
+    aiProviders: options.aiProviders,
+    isFirebase,
+    activeBackendModules,
+    progress,
+  };
+
+  try {
+    await initReactNative(ctx);
+    await deleteDefaultFiles(ctx);
+    await copyTemplateFiles(ctx);
+    if (isFirebase) await copyFirebaseFiles(ctx);
+    await mergePackageJson(ctx);
+    await pruneBackendModules(ctx);
+    await patchDiInjectors(ctx);
+    await configureGit(ctx);
+    if (ctx.installDeps) await installDependencies(ctx);
+
+    return { success: true, output: buildSuccessOutput(ctx) };
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    return { success: false, output: "", error: errorMessage };
+    const msg = error instanceof Error ? error.message : String(error);
+    return { success: false, output: "", error: msg };
   }
-}
-
-function generateNextStepInstall(installDeps: boolean, packageManager: PmCommandType) {
-  if (!installDeps) {
-    return `${chalk.yellow("Install dependencies")}
-      • ${PM_COMMANDS[packageManager].install}
-      • ${PM_COMMANDS[packageManager].run("start")}   # Start Metro bundler`;
-  }
-  return `• ${PM_COMMANDS[packageManager].run("start")}   # Start Metro bundler`;
-}
-
-function generateNextStepIos(podInstall: boolean, packageManager: PmCommandType) {
-  if (!podInstall) {
-    return `• Install Cocoapods
-      • ${PM_COMMANDS[packageManager].run("pod-cocoa")}     # Install ruby Gems (iOS)
-      • ${PM_COMMANDS[packageManager].run("pod-install")}   # Install CocoaPods
-    
-    • ${PM_COMMANDS[packageManager].run("ios")}       # Run on iOS`;
-  }
-  return `• ${PM_COMMANDS[packageManager].run("ios")}       # Run on iOS`;
 }

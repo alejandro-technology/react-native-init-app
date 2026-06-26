@@ -1,147 +1,87 @@
-import { execa } from "execa";
-
 import type { CommandType, ProgressCallback } from "../../domain/command/command.model.js";
 import { CLEAN_OPTIONS } from "../../domain/constants.js";
+import { execStreamed } from "./exec-streamed.js";
+import { Progress } from "./progress.js";
 
 interface CommandResult {
   success: boolean;
   output: string;
 }
 
-interface CommandHandler {
-  execute(
-    cleanOption?: string,
-    onStepChange?: ProgressCallback
-  ): Promise<CommandResult>;
+interface ScriptCommand {
+  script: string;
+  message: string;
+  totalSteps: number;
 }
 
-class CleanCommandHandler implements CommandHandler {
-  async execute(
-    cleanOption?: string,
-    onStepChange?: ProgressCallback
-  ): Promise<CommandResult> {
-    const selectedClean = CLEAN_OPTIONS.find(
-      (opt) => opt.label === cleanOption
-    );
+const COMMANDS: Partial<Record<CommandType, ScriptCommand>> = {
+  clean: { script: "clean", message: "Cleaning...", totalSteps: 4 },
+  "pod-install": { script: "pod-install", message: "Running pod install...", totalSteps: 1 },
+  "run-android": { script: "android", message: "Running on Android...", totalSteps: 1 },
+};
 
-    if (!selectedClean) {
-      return { success: false, output: "❌ Error: Invalid clean option" };
-    }
+async function executeClean(
+  cleanOption: string | undefined,
+  onStepChange?: ProgressCallback
+): Promise<CommandResult> {
+  const selectedClean = CLEAN_OPTIONS.find((opt) => opt.label === cleanOption);
 
-    if (cleanOption === "All") {
-      return this.cleanAll(onStepChange);
-    }
-
-    return this.cleanSingle(selectedClean.script, onStepChange);
+  if (!selectedClean) {
+    return { success: false, output: "❌ Error: Invalid clean option" };
   }
 
-  private async cleanAll(
-    onStepChange?: ProgressCallback
-  ): Promise<CommandResult> {
-    const steps = [
-      { script: "clean-android", message: "Cleaning Android..." },
-      { script: "clean-ios", message: "Cleaning iOS..." },
-      { script: "clean-node", message: "Cleaning Node Modules..." },
-      { script: "clean-watch", message: "Cleaning Watchman..." },
-    ];
+  if (cleanOption === "All") {
+    const steps = CLEAN_OPTIONS.filter((opt) => opt.label !== "All");
+    const progress = new Progress(steps.length, onStepChange);
 
-    for (let i = 0; i < steps.length; i++) {
-      onStepChange?.(i, steps.length, steps[i].message);
-      await this.runStreamed("npm", ["run", steps[i].script], onStepChange, i, steps.length);
+    for (const step of steps) {
+      progress.next(`Cleaning ${step.label}...`);
+      await execStreamed("npm", ["run", step.script], {
+        onLog: (log) => onStepChange?.(progress.step, progress.total, "", log),
+      });
     }
 
-    onStepChange?.(steps.length, steps.length, "All cleaned!");
+    progress.current("All cleaned!");
     return { success: true, output: "✅ All caches cleaned successfully!" };
   }
 
-  private async cleanSingle(script: string, onStepChange?: ProgressCallback): Promise<CommandResult> {
-    await this.runStreamed("npm", ["run", script], onStepChange, 0, 1);
-    return { success: true, output: "✅ Command completed successfully!" };
-  }
+  const progress = new Progress(1, onStepChange);
+  progress.next(`Cleaning ${selectedClean.label}...`);
+  await execStreamed("npm", ["run", selectedClean.script], {
+    onLog: (log) => onStepChange?.(progress.step, progress.total, "", log),
+  });
 
-  private async runStreamed(
-    cmd: string,
-    args: string[],
-    onStepChange?: ProgressCallback,
-    step: number = 0,
-    total: number = 1
-  ): Promise<void> {
-    const childProcess = execa(cmd, args, { cleanup: true });
-    
-    childProcess.stdout?.on("data", (data) => {
-      onStepChange?.(step, total, "", data.toString());
-    });
-    childProcess.stderr?.on("data", (data) => {
-      onStepChange?.(step, total, "", data.toString());
-    });
-
-    await childProcess;
-  }
+  return { success: true, output: "✅ Command completed successfully!" };
 }
 
-class PodInstallHandler implements CommandHandler {
-  async execute(
-    _?: string,
-    onStepChange?: ProgressCallback
-  ): Promise<CommandResult> {
-    const childProcess = execa("npm", ["run", "pod-install"], { cleanup: true });
-
-    childProcess.stdout?.on("data", (data) => {
-      onStepChange?.(0, 1, "Running pod install...", data.toString());
-    });
-    childProcess.stderr?.on("data", (data) => {
-      onStepChange?.(0, 1, "Running pod install...", data.toString());
-    });
-
-    await childProcess;
-    return {
-      success: true,
-      output: "✅ Command completed successfully!",
-    };
+async function executeScript(
+  commandType: CommandType,
+  onStepChange?: ProgressCallback
+): Promise<CommandResult> {
+  const config = COMMANDS[commandType];
+  if (!config) {
+    return { success: false, output: `❌ Error: Unknown command "${commandType}"` };
   }
+
+  const progress = new Progress(config.totalSteps, onStepChange);
+  progress.next(config.message);
+  await execStreamed("npm", ["run", config.script], {
+    onLog: (log) => onStepChange?.(progress.step, progress.total, "", log),
+  });
+
+  return { success: true, output: "✅ Command completed successfully!" };
 }
-
-class RunAndroidHandler implements CommandHandler {
-  async execute(
-    _?: string,
-    onStepChange?: ProgressCallback
-  ): Promise<CommandResult> {
-    const childProcess = execa("npm", ["run", "android"], { cleanup: true });
-
-    childProcess.stdout?.on("data", (data) => {
-      onStepChange?.(0, 1, "Running on Android...", data.toString());
-    });
-    childProcess.stderr?.on("data", (data) => {
-      onStepChange?.(0, 1, "Running on Android...", data.toString());
-    });
-
-    await childProcess;
-    return {
-      success: true,
-      output: "✅ Command completed successfully!",
-    };
-  }
-}
-
-const commandHandlers: Partial<Record<CommandType, CommandHandler>> = {
-  clean: new CleanCommandHandler(),
-  "pod-install": new PodInstallHandler(),
-  "run-android": new RunAndroidHandler(),
-};
 
 export async function runCommand(
   commandType: CommandType,
   cleanOption?: string,
   onStepChange?: ProgressCallback
 ): Promise<CommandResult> {
-  const handler = commandHandlers[commandType];
-
-  if (!handler) {
-    return { success: false, output: `❌ Error: Unknown command "${commandType}"` };
-  }
-
   try {
-    return await handler.execute(cleanOption, onStepChange);
+    if (commandType === "clean") {
+      return await executeClean(cleanOption, onStepChange);
+    }
+    return await executeScript(commandType, onStepChange);
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     return { success: false, output: `❌ Error: ${errorMessage}` };
