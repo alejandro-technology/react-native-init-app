@@ -93,31 +93,38 @@ export const App: React.FC<AppProps> = ({ command, cleanOption, scaffoldData }) 
   }, [command, cleanOption, scaffoldData]);
 
   const { color, text } = STATUS_CONFIG[status];
-  const cmdLabel =
-    scaffoldData && command === "scaffold"
-      ? `Scaffold: ${scaffoldData.projectName}`
-      : cleanOption && command === "clean"
-        ? `Clean ${cleanOption}`
-        : COMMAND_LABELS[command];
-
   const steps = showSteps ? SCAFFOLD_STEPS : ["Processing..."];
 
   return (
     <Box flexDirection="column" padding={1} borderStyle="classic" borderColor="cyan">
-      <Box>
+      <Box marginBottom={1}>
         <Text bold color="cyan">
           ⚡ React Native TUI
         </Text>
       </Box>
-      <Spacer />
+
       <Box>
         <Text color="gray">Command: </Text>
-        <Text bold>{cmdLabel}</Text>
+        <Text bold>{COMMAND_LABELS[command]}</Text>
       </Box>
-      <Box>
+      <Box marginBottom={1}>
         <Text color="gray">Status: </Text>
         <Text color={color}>{text}</Text>
       </Box>
+
+      <Box>
+        <Text color="gray">Project: </Text>
+        <Text bold>{scaffoldData.projectName}</Text>
+      </Box>
+      <Box>
+        <Text color="gray">Backend: </Text>
+        <Text bold>{scaffoldData.backend?.name}</Text>
+      </Box>
+      <Box marginBottom={1}>
+        <Text color="gray">Agent: </Text>
+        <Text bold>{scaffoldData.aiProviders.map((provider) => provider).join(", ") || "N/A"}</Text>
+      </Box>
+
       {showSteps && status === "running" && (
         <>
           <Spacer />

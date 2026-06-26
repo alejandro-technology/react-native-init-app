@@ -7,7 +7,7 @@ export async function configureGit(ctx: ScaffoldContext): Promise<void> {
   try {
     await execa("git", ["init"], { cwd: ctx.projectDir });
     await execa("git", ["add", "."], { cwd: ctx.projectDir });
-    await execa("git", ["commit", "-m", "chore: apply OpenCode Clean Architecture template"], {
+    await execa("git", ["commit", "-m", "chore: apply Clean Architecture template"], {
       cwd: ctx.projectDir,
     });
   } catch {
