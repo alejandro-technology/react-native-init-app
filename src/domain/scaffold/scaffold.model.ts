@@ -1,6 +1,6 @@
 export type AiProvider = "claude" | "opencode" | "trae";
 
-export type BackendProviderName = "firebase"; // extensible
+export type BackendProviderName = "firebase" | "supabase" | "http" | "local" | "mock"; // extensible
 
 export interface BackendSelection {
   name: BackendProviderName;

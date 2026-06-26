@@ -10,6 +10,10 @@ export interface ScaffoldContext {
   podInstall: boolean;
   aiProviders: string[];
   isFirebase: boolean;
+  isSupabase: boolean;
+  isHttp: boolean;
+  isLocal: boolean;
   activeBackendModules: string[];
   progress: Progress;
+  rnVersion: string;
 }

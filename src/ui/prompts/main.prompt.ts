@@ -9,6 +9,7 @@ import {
   validateBundleId,
   validateDirectory,
 } from "../../domain/project/project.validators.js";
+import { type BackendProviderName } from "../../domain/scaffold/scaffold.model.js";
 
 function printHeader(): void {
   console.log(chalk.cyan("\n⚡ React Native TUI\n"));
@@ -108,11 +109,10 @@ async function promptScaffoldData(): Promise<PromptResult> {
     name: "backendChoice",
     message: "Which backend provider do you want to include?",
     choices: [
-      { name: "none", message: "None" },
-      { name: "firebase", message: "Firebase" },
-      { name: "supabase", message: "Supabase" },
-      { name: "http", message: "Http API (Custom)" },
       { name: "local", message: "Local (SQLite)" },
+      { name: "http", message: "Http API" },
+      { name: "supabase", message: "Supabase" },
+      { name: "firebase", message: "Firebase" },
     ],
     initial: 0,
   });
@@ -147,7 +147,7 @@ async function promptScaffoldData(): Promise<PromptResult> {
       installDeps: options.includes("installDeps"),
       podInstall: options.includes("podInstall"),
       aiProviders: codeAgents as ("claude" | "opencode" | "trae")[],
-      backend,
+      backend: backend || { name: backendChoice as BackendProviderName, modules: [] },
     },
   };
 }

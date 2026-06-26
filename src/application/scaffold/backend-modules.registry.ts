@@ -2,9 +2,9 @@ export const FIREBASE_MODULES = {
   auth: {
     dep: "@react-native-firebase/auth",
     diServiceFile: "authentication/infrastructure/auth.service.ts",
-    diImportRegex: /import authFirebaseService from '\.\/firebase-auth\.service';\n/,
+    diImportRegex: /import authFirebaseService from '\.\/auth\.firebase\.service';\n/,
     diCaseRegex: / {4}case 'firebase':\n {6}return authFirebaseService;\n/,
-    files: ["src/modules/authentication/infrastructure/firebase-auth.service.ts"],
+    files: ["src/modules/authentication/infrastructure/auth.firebase.service.ts"],
     firebaseIndexExport:
       /export \{ default as authenticationService \} from '\.\/infrastructure\/authentication\.service';\n/,
   },
@@ -68,3 +68,87 @@ export function getFirebaseDeps(activeModules: string[]): Record<string, string>
   }
   return deps;
 }
+
+export const LOCAL_MODULES = {
+  auth: {
+    diServiceFile: "authentication/infrastructure/auth.service.ts",
+    diImportRegex: /import authLocalService from '\.\/auth\.local\.service';\n/,
+    diCaseRegex: / {4}case 'local':\n {6}return authLocalService;\n/,
+    files: ["src/modules/authentication/infrastructure/auth.local.service.ts"],
+  },
+  products: {
+    diServiceFile: "products/infrastructure/product.service.ts",
+    diImportRegex: /import productLocalService from '\.\/product\.local\.service';\n/,
+    diCaseRegex: / {4}case 'local':\n {6}return productLocalService;\n/,
+    files: ["src/modules/products/infrastructure/product.local.service.ts"],
+  },
+  users: {
+    diServiceFile: "users/infrastructure/user.service.ts",
+    diImportRegex: /import userLocalService from '\.\/user\.local\.service';\n/,
+    diCaseRegex: / {4}case 'local':\n {6}return userLocalService;\n/,
+    files: ["src/modules/users/infrastructure/user.local.service.ts"],
+  },
+};
+
+export const SUPABASE_MODULES = {
+  auth: {
+    diServiceFile: "authentication/infrastructure/auth.service.ts",
+    diImportRegex: /import authSupabaseService from '\.\/auth\.supabase\.service';\n/,
+    diCaseRegex: / {4}case 'supabase':\n {6}return authSupabaseService;\n/,
+    files: ["src/modules/authentication/infrastructure/auth.supabase.service.ts"],
+  },
+  products: {
+    diServiceFile: "products/infrastructure/product.service.ts",
+    diImportRegex: /import productSupabaseService from '\.\/product\.supabase\.service';\n/,
+    diCaseRegex: / {4}case 'supabase':\n {6}return productSupabaseService;\n/,
+    files: ["src/modules/products/infrastructure/product.supabase.service.ts"],
+  },
+  users: {
+    diServiceFile: "users/infrastructure/user.service.ts",
+    diImportRegex: /import userSupabaseService from '\.\/user\.supabase\.service';\n/,
+    diCaseRegex: / {4}case 'supabase':\n {6}return userSupabaseService;\n/,
+    files: ["src/modules/users/infrastructure/user.supabase.service.ts"],
+  },
+};
+
+export const HTTP_MODULES = {
+  auth: {
+    diServiceFile: "authentication/infrastructure/auth.service.ts",
+    diImportRegex: /import authHttpService from '\.\/auth\.http\.service';\n/,
+    diCaseRegex: / {4}case 'http':\n {6}return authHttpService;\n/,
+    files: ["src/modules/authentication/infrastructure/auth.http.service.ts"],
+  },
+  products: {
+    diServiceFile: "products/infrastructure/product.service.ts",
+    diImportRegex: /import productHttpService from '\.\/product\.http\.service';\n/,
+    diCaseRegex: / {4}case 'http':\n {6}return productHttpService;\n/,
+    files: ["src/modules/products/infrastructure/product.http.service.ts"],
+  },
+  users: {
+    diServiceFile: "users/infrastructure/user.service.ts",
+    diImportRegex: /import userHttpService from '\.\/user\.http\.service';\n/,
+    diCaseRegex: / {4}case 'http':\n {6}return userHttpService;\n/,
+    files: ["src/modules/users/infrastructure/user.http.service.ts"],
+  },
+};
+
+export const MOCK_MODULES = {
+  auth: {
+    diServiceFile: "authentication/infrastructure/auth.service.ts",
+    diImportRegex: /import authMockService from '\.\/auth\.mock\.service';\n/,
+    diCaseRegex: / {4}case 'mock':\n {6}return authMockService;\n/,
+    files: ["src/modules/authentication/infrastructure/auth.mock.service.ts"],
+  },
+  products: {
+    diServiceFile: "products/infrastructure/product.service.ts",
+    diImportRegex: /import productMockService from '\.\/product\.mock\.service';\n/,
+    diCaseRegex: / {4}case 'mock':\n {6}return productMockService;\n/,
+    files: ["src/modules/products/infrastructure/product.mock.service.ts"],
+  },
+  users: {
+    diServiceFile: "users/infrastructure/user.service.ts",
+    diImportRegex: /import userMockService from '\.\/user\.mock\.service';\n/,
+    diCaseRegex: / {4}case 'mock':\n {6}return userMockService;\n/,
+    files: ["src/modules/users/infrastructure/user.mock.service.ts"],
+  },
+};

@@ -15,6 +15,6 @@ export async function initReactNative(ctx: ScaffoldContext): Promise<void> {
     ctx.bundleId,
     "--skip-install",
     "--version",
-    "0.83.4",
+    ctx.rnVersion,
   ]);
 }

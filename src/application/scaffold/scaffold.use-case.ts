@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import chalk from "chalk";
-import { PM_COMMANDS } from "../../domain/constants.js";
+import { PM_COMMANDS, RN_VERSION } from "../../domain/constants.js";
 import type { PmCommandType } from "../../domain/project/project.model.js";
 import type { ScaffoldOptions } from "../../domain/scaffold/scaffold.model.js";
 import { Progress } from "../commands/progress.js";
@@ -22,13 +22,36 @@ import { installDependencies } from "./steps/install-dependencies.step.js";
 
 export const FILES_TO_COPY = [
   "__mocks__",
-  "__tests__",
+  "__tests__/components",
+  "__tests__/providers",
+  "__tests__/theme",
+  "__tests__/modules/authentication",
+  "__tests__/modules/core",
+  "__tests__/modules/firebase",
+  "__tests__/modules/network",
+  "__tests__/modules/products",
+  "__tests__/modules/supabase",
+  "__tests__/modules/users",
   ".bundle",
   ".github",
   ".env.example",
   ".husky",
   // Folders
-  "src",
+  "src/assets",
+  "src/components",
+  "src/config",
+  "src/modules/authentication",
+  "src/modules/core",
+  "src/modules/firebase",
+  "src/modules/network",
+  "src/modules/sqlite",
+  "src/modules/products",
+  "src/modules/supabase",
+  "src/modules/users",
+  "src/navigation",
+  "src/providers",
+  "src/theme",
+  "src/utils",
   "vendor",
   // AI - (Set one of useClaude, useOpencode, useTrae to true)
   //".ai",
@@ -88,6 +111,21 @@ export const FIREBASE_FILES = (projectName: string) =>
       dest: "ios/GoogleService-Info.plist",
     },
   ] as const;
+
+export const HTTP_FILES = [
+  "axios-client.service.ts",
+  "axios.service.ts",
+  "network.error.ts",
+  "network.messages.ts",
+  "refresh-token.manager.ts",
+];
+
+export const SERVICE_PROVIDER_STRING = `export type ServiceProvider =
+  | 'local'
+  | 'supabase'
+  | 'firebase'
+  | 'http'
+  | 'mock';`;
 
 // ---------------------------------------------------------------------------
 // Utility functions (shared with step files via import)
@@ -186,13 +224,17 @@ export async function scaffoldProject(
   options: ScaffoldOptions,
 ): Promise<{ success: boolean; output: string; error?: string }> {
   const projectDir = path.resolve(options.directory);
-  const isFirebase = options.backend?.name === "firebase";
   const activeBackendModules = options.backend?.modules ?? [];
   const totalSteps =
     8 +
     (options.installDeps ? 1 : 0) +
     (options.podInstall && process.platform === "darwin" ? 1 : 0);
   const progress = new Progress(totalSteps, options.onProgress);
+
+  const isHttp = options.backend?.name === "http";
+  const isLocal = options.backend?.name === "local";
+  const isFirebase = options.backend?.name === "firebase";
+  const isSupabase = options.backend?.name === "supabase";
 
   const ctx: ScaffoldContext = {
     projectDir,
@@ -203,21 +245,25 @@ export async function scaffoldProject(
     installDeps: options.installDeps,
     podInstall: options.podInstall,
     aiProviders: options.aiProviders,
-    isFirebase,
     activeBackendModules,
     progress,
+    rnVersion: RN_VERSION,
+    isFirebase,
+    isSupabase,
+    isHttp,
+    isLocal,
   };
 
   try {
     await initReactNative(ctx);
     await deleteDefaultFiles(ctx);
     await copyTemplateFiles(ctx);
-    if (isFirebase) await copyFirebaseFiles(ctx);
+    if (ctx.isFirebase) await copyFirebaseFiles(ctx);
     await mergePackageJson(ctx);
     await pruneBackendModules(ctx);
     await patchDiInjectors(ctx);
-    await configureGit(ctx);
     if (ctx.installDeps) await installDependencies(ctx);
+    await configureGit(ctx);
 
     return { success: true, output: buildSuccessOutput(ctx) };
   } catch (error) {

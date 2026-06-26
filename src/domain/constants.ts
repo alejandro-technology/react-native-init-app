@@ -1,6 +1,6 @@
 import type { CleanOption } from "./command/command.model.js";
 export const VERSION = "1.1.0";
-export const RN_VERSION = "0.83.4";
+export const RN_VERSION = "0.83.9";
 
 export const PM_COMMANDS = {
   npm: {

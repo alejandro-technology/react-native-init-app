@@ -18,6 +18,14 @@ export async function mergePackageJson(ctx: ScaffoldContext): Promise<void> {
     if (dep.startsWith("@react-native-firebase/") && !(dep in firebaseDepsToKeep)) {
       delete templateDeps[dep];
     }
+
+    if (dep.startsWith("react-native-nitro-sqlite") && !ctx.isLocal) {
+      delete templateDeps[dep];
+    }
+
+    if (dep.startsWith("@supabase/") && !ctx.isSupabase) {
+      delete templateDeps[dep];
+    }
   });
 
   const mergedPackageJson = {

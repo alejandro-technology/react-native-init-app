@@ -1,42 +1,74 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { pathExists } from "../scaffold.use-case.js";
-import { FIREBASE_MODULES } from "../backend-modules.registry.js";
+import {
+  FIREBASE_MODULES,
+  HTTP_MODULES,
+  LOCAL_MODULES,
+  MOCK_MODULES,
+  SUPABASE_MODULES,
+} from "../backend-modules.registry.js";
 import type { ScaffoldContext } from "../scaffold.context.js";
 
 export async function patchDiInjectors(ctx: ScaffoldContext): Promise<void> {
   ctx.progress.next("Patching dependency injectors...");
 
-  for (const [name, mod] of Object.entries(FIREBASE_MODULES)) {
-    const shouldRemove = !ctx.isFirebase || !ctx.activeBackendModules.includes(name);
-    if (!shouldRemove) continue;
+  // Helper function to patch DI injectors for a module registry
+  async function patchModules(
+    modules: Record<string, any>,
+    shouldRemoveModule: (name: string, mod: any) => boolean,
+  ) {
+    for (const [name, mod] of Object.entries(modules)) {
+      if (!shouldRemoveModule(name, mod)) continue;
 
-    // Singular DI pattern (auth): one service file, one import regex, one case regex
-    if ("diImportRegex" in mod) {
-      const m = mod as (typeof FIREBASE_MODULES)["auth"];
-      const servicePath = path.join(ctx.projectDir, "src/modules", m.diServiceFile);
-      if (await pathExists(servicePath)) {
-        let content = await fs.readFile(servicePath, "utf-8");
-        content = content.replace(m.diImportRegex, "");
-        content = content.replace(m.diCaseRegex, "");
-        await fs.writeFile(servicePath, content);
-      }
-    }
-
-    // Plural DI pattern (firestore): multiple service files with parallel regex arrays
-    if ("diImportRegexes" in mod) {
-      const m = mod as (typeof FIREBASE_MODULES)["firestore"];
-      for (let i = 0; i < m.diServiceFiles.length; i++) {
-        const servicePath = path.join(ctx.projectDir, "src/modules", m.diServiceFiles[i]);
+      // Singular DI pattern: one service file, one import regex, one case regex
+      if ("diImportRegex" in mod && "diServiceFile" in mod) {
+        const servicePath = path.join(ctx.projectDir, "src/modules", mod.diServiceFile);
         if (await pathExists(servicePath)) {
           let content = await fs.readFile(servicePath, "utf-8");
-          content = content.replace(m.diImportRegexes[i], "");
-          content = content.replace(m.diCaseRegexes[i], "");
+          content = content.replace(mod.diImportRegex, "");
+          content = content.replace(mod.diCaseRegex, "");
           await fs.writeFile(servicePath, content);
+        }
+      }
+
+      // Plural DI pattern: multiple service files with parallel regex arrays
+      if ("diImportRegexes" in mod && "diServiceFiles" in mod) {
+        for (let i = 0; i < mod.diServiceFiles.length; i++) {
+          const servicePath = path.join(ctx.projectDir, "src/modules", mod.diServiceFiles[i]);
+          if (await pathExists(servicePath)) {
+            let content = await fs.readFile(servicePath, "utf-8");
+            content = content.replace(mod.diImportRegexes[i], "");
+            content = content.replace(mod.diCaseRegexes[i], "");
+            await fs.writeFile(servicePath, content);
+          }
         }
       }
     }
   }
+
+  // Patch MOCK_MODULES
+  await patchModules(MOCK_MODULES, () => true);
+
+  // Patch LOCAL_MODULES if local backend is not active
+  if (!ctx.isLocal) {
+    await patchModules(LOCAL_MODULES, () => true);
+  }
+
+  // Patch SUPABASE_MODULES if supabase backend is not active
+  if (!ctx.isSupabase) {
+    await patchModules(SUPABASE_MODULES, () => true);
+  }
+
+  // Patch HTTP_MODULES if http backend is not active
+  if (!ctx.isHttp) {
+    await patchModules(HTTP_MODULES, () => true);
+  }
+
+  // Patch FIREBASE_MODULES
+  await patchModules(FIREBASE_MODULES, (name, _mod) => {
+    return !ctx.isFirebase || !ctx.activeBackendModules.includes(name);
+  });
 
   // Patch firebase/index.ts — remove exports for inactive modules
   if (ctx.isFirebase) {
