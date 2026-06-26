@@ -21,9 +21,8 @@ export async function copyFirebaseFiles(ctx: ScaffoldContext): Promise<void> {
   }
 
   // iOS replacements
-  await replaceInFileIfExists(
-    path.join(ctx.projectDir, "ios/Podfile"),
-    (content) => content.replaceAll(TEMPLATE_NAME, ctx.projectName),
+  await replaceInFileIfExists(path.join(ctx.projectDir, "ios/Podfile"), (content) =>
+    content.replaceAll(TEMPLATE_NAME, ctx.projectName),
   );
 
   await replaceInFileIfExists(
@@ -37,18 +36,12 @@ export async function copyFirebaseFiles(ctx: ScaffoldContext): Promise<void> {
   );
 
   // Android replacements
-  await replaceInFileIfExists(
-    path.join(ctx.projectDir, "android/build.gradle"),
-    (content) => content.replaceAll(TEMPLATE_NAME, ctx.projectName),
+  await replaceInFileIfExists(path.join(ctx.projectDir, "android/build.gradle"), (content) =>
+    content.replaceAll(TEMPLATE_NAME, ctx.projectName),
   );
 
-  await replaceInFileIfExists(
-    path.join(ctx.projectDir, "android/app/build.gradle"),
-    (content) =>
-      patchAndroidAppGradle(
-        content.replaceAll(TEMPLATE_NAME, ctx.projectName),
-        ctx.bundleId,
-      ),
+  await replaceInFileIfExists(path.join(ctx.projectDir, "android/app/build.gradle"), (content) =>
+    patchAndroidAppGradle(content.replaceAll(TEMPLATE_NAME, ctx.projectName), ctx.bundleId),
   );
 
   await replaceInFileIfExists(

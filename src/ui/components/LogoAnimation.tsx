@@ -19,15 +19,18 @@ function renderFrame(frame: number): string {
 
   // Initialize grid
   const grid: Cell[][] = Array.from({ length: height }, () =>
-    Array.from({ length: width }, () => ({ char: " ", color: "none" }))
+    Array.from({ length: width }, () => ({ char: " ", color: "none" })),
   );
 
   // 1. Draw nucleus
   grid[cy][cx] = { char: "●", color: "nucleus" };
   const glowPoints = [
-    { dx: -2, dy: 0 }, { dx: 2, dy: 0 },
-    { dx: -1, dy: -1 }, { dx: 1, dy: -1 },
-    { dx: -1, dy: 1 }, { dx: 1, dy: 1 }
+    { dx: -2, dy: 0 },
+    { dx: 2, dy: 0 },
+    { dx: -1, dy: -1 },
+    { dx: 1, dy: -1 },
+    { dx: -1, dy: 1 },
+    { dx: 1, dy: 1 },
   ];
   for (const { dx, dy } of glowPoints) {
     const gx = cx + dx;
@@ -40,7 +43,7 @@ function renderFrame(frame: number): string {
   // Define orbits parameters
   const a = 15; // semi-major axis
   const b = 5.5; // semi-minor axis
-  const baseAngles = [Math.PI / 6, Math.PI / 2, 5 * Math.PI / 6];
+  const baseAngles = [Math.PI / 6, Math.PI / 2, (5 * Math.PI) / 6];
 
   // Animation timelines
   const drawProgress = Math.min(1.0, frame / 25);
@@ -75,7 +78,7 @@ function renderFrame(frame: number): string {
 
     for (let i = 0; i < 3; i++) {
       const angle = baseAngles[i] + spinAngle;
-      
+
       for (const offset of electronOffsets) {
         const t_base = t_e + offset;
         const trailLength = 4;
@@ -118,9 +121,7 @@ function renderFrame(frame: number): string {
     "trail-3": (s) => chalk.hex("#005D70")(s),
   };
 
-  const lines = grid.map((row) =>
-    row.map((cell) => colorMap[cell.color](cell.char)).join("")
-  );
+  const lines = grid.map((row) => row.map((cell) => colorMap[cell.color](cell.char)).join(""));
 
   return lines.join("\n");
 }

@@ -7,8 +7,8 @@ export class Progress {
       step: number,
       total: number,
       message: string,
-      log?: string
-    ) => void
+      log?: string,
+    ) => void,
   ) {}
 
   next(message: string): number {

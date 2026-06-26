@@ -107,7 +107,7 @@ export async function readJson(filePath: string) {
   return JSON.parse(content);
 }
 
-export async function writeJson(filePath: string, data: any) {
+export async function writeJson(filePath: string, data: unknown) {
   await fs.writeFile(filePath, JSON.stringify(data, null, 2));
 }
 
@@ -125,14 +125,8 @@ export async function replaceInFileIfExists(
 
 export function patchAndroidAppGradle(content: string, bundleId: string) {
   let next = content;
-  next = next.replace(
-    /(^\s*namespace\s+)(["'])[^\r\n"']+\2/m,
-    `$1"${bundleId}"`,
-  );
-  next = next.replace(
-    /(^\s*applicationId\s+)(["'])[^\r\n"']+\2/m,
-    `$1"${bundleId}"`,
-  );
+  next = next.replace(/(^\s*namespace\s+)(["'])[^\r\n"']+\2/m, `$1"${bundleId}"`);
+  next = next.replace(/(^\s*applicationId\s+)(["'])[^\r\n"']+\2/m, `$1"${bundleId}"`);
   return next;
 }
 
@@ -140,10 +134,7 @@ export function patchAndroidAppGradle(content: string, bundleId: string) {
 // Success output helpers
 // ---------------------------------------------------------------------------
 
-function generateNextStepInstall(
-  installDeps: boolean,
-  packageManager: PmCommandType,
-) {
+function generateNextStepInstall(installDeps: boolean, packageManager: PmCommandType) {
   if (!installDeps) {
     return `${chalk.yellow("Install dependencies")}
       • ${PM_COMMANDS[packageManager].install}
@@ -152,10 +143,7 @@ function generateNextStepInstall(
   return `• ${PM_COMMANDS[packageManager].run("start")}   # Start Metro bundler`;
 }
 
-function generateNextStepIos(
-  podInstall: boolean,
-  packageManager: PmCommandType,
-) {
+function generateNextStepIos(podInstall: boolean, packageManager: PmCommandType) {
   if (!podInstall) {
     return `• Install Cocoapods
       • ${PM_COMMANDS[packageManager].run("pod-cocoa")}     # Install ruby Gems (iOS)
@@ -167,8 +155,7 @@ function generateNextStepIos(
 }
 
 function buildSuccessOutput(ctx: ScaffoldContext): string {
-  const { projectDir, projectName, packageManager, installDeps, podInstall } =
-    ctx;
+  const { projectDir, projectName, packageManager, installDeps, podInstall } = ctx;
   const pm = packageManager as PmCommandType;
 
   return `

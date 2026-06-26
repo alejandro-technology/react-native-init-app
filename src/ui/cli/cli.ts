@@ -10,12 +10,12 @@ import type { CommandType } from "../../domain/command/command.model.js";
 
 export async function runCli(args: string[]) {
   const commandArg = args[0] as CommandType;
-  
+
   if (commandArg === "version") {
     console.log(VERSION_OUTPUT);
     process.exit(0);
   }
-  
+
   if (commandArg === "help") {
     console.log(HELP_OUTPUT);
     process.exit(0);
@@ -63,7 +63,9 @@ export async function runCli(args: string[]) {
       }
       const cleanLabel = CLEAN_TARGETS[target.toLowerCase()];
       if (!cleanLabel) {
-        throw new Error(`Invalid clean target: ${target}. Valid options: ${Object.keys(CLEAN_TARGETS).join(", ")}`);
+        throw new Error(
+          `Invalid clean target: ${target}. Valid options: ${Object.keys(CLEAN_TARGETS).join(", ")}`,
+        );
       }
       result = await runCommand("clean", cleanLabel, logger.onProgress);
     } else if (commandArg === "pod-install" || commandArg === "run-android") {
@@ -73,10 +75,16 @@ export async function runCli(args: string[]) {
     }
 
     if (jsonMode) {
-      console.log(JSON.stringify({
-        success: result.success,
-        output: stripVTControlCharacters(result.output.trim())
-      }, null, 2));
+      console.log(
+        JSON.stringify(
+          {
+            success: result.success,
+            output: stripVTControlCharacters(result.output.trim()),
+          },
+          null,
+          2,
+        ),
+      );
     } else if (result.success) {
       console.log(`\n${result.output}\n`);
     } else {
@@ -87,7 +95,9 @@ export async function runCli(args: string[]) {
   } catch (err) {
     const errorMsg = err instanceof Error ? err.message : String(err);
     if (jsonMode) {
-      console.log(JSON.stringify({ success: false, error: stripVTControlCharacters(errorMsg) }, null, 2));
+      console.log(
+        JSON.stringify({ success: false, error: stripVTControlCharacters(errorMsg) }, null, 2),
+      );
     } else {
       console.error(`\n❌ Error: ${errorMsg}\n`);
     }

@@ -22,7 +22,7 @@ const COMMANDS: Partial<Record<CommandType, ScriptCommand>> = {
 
 async function executeClean(
   cleanOption: string | undefined,
-  onStepChange?: ProgressCallback
+  onStepChange?: ProgressCallback,
 ): Promise<CommandResult> {
   const selectedClean = CLEAN_OPTIONS.find((opt) => opt.label === cleanOption);
 
@@ -56,7 +56,7 @@ async function executeClean(
 
 async function executeScript(
   commandType: CommandType,
-  onStepChange?: ProgressCallback
+  onStepChange?: ProgressCallback,
 ): Promise<CommandResult> {
   const config = COMMANDS[commandType];
   if (!config) {
@@ -75,7 +75,7 @@ async function executeScript(
 export async function runCommand(
   commandType: CommandType,
   cleanOption?: string,
-  onStepChange?: ProgressCallback
+  onStepChange?: ProgressCallback,
 ): Promise<CommandResult> {
   try {
     if (commandType === "clean") {

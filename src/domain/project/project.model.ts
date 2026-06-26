@@ -1,4 +1,4 @@
-import { PM_COMMANDS } from "../constants.js";
+import { type PM_COMMANDS } from "../constants.js";
 import type { AiProvider, BackendSelection } from "../scaffold/scaffold.model.js";
 
 export type PmCommandType = keyof typeof PM_COMMANDS;

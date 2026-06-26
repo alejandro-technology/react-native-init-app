@@ -6,17 +6,13 @@ import type { ScaffoldContext } from "../scaffold.context.js";
 export async function mergePackageJson(ctx: ScaffoldContext): Promise<void> {
   ctx.progress.next("Merging package.json...");
 
-  const templatePackageJson = await readJson(
-    path.join(ctx.templatePath, "package.json"),
-  );
+  const templatePackageJson = await readJson(path.join(ctx.templatePath, "package.json"));
   const newPackageJsonPath = path.join(ctx.projectDir, "package.json");
   const newPackageJson = await readJson(newPackageJsonPath);
 
   // Prune Firebase dependencies based on active modules
   const templateDeps = { ...templatePackageJson.dependencies };
-  const firebaseDepsToKeep = ctx.isFirebase
-    ? getFirebaseDeps(ctx.activeBackendModules)
-    : {};
+  const firebaseDepsToKeep = ctx.isFirebase ? getFirebaseDeps(ctx.activeBackendModules) : {};
 
   Object.keys(templateDeps).forEach((dep) => {
     if (dep.startsWith("@react-native-firebase/") && !(dep in firebaseDepsToKeep)) {

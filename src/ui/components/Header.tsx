@@ -1,6 +1,5 @@
 import React from "react";
 import { Box, Text } from "ink";
-import chalk from "chalk";
 import { VERSION } from "../../domain/constants.js";
 
 export const Header: React.FC = () => {
@@ -17,9 +16,7 @@ export const Header: React.FC = () => {
           Clean Architecture Template Generator
         </Text>
       </Box>
-      <Text color="gray">
-        {"─".repeat(process.stdout.columns || 80)}
-      </Text>
+      <Text color="gray">{"─".repeat(process.stdout.columns || 80)}</Text>
     </Box>
   );
 };

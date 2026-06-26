@@ -4,14 +4,18 @@ import path from "node:path";
 import os from "node:os";
 import tar from "tar";
 
-import type { ITemplateRepository, DownloadOptions, DownloadResult } from "../../domain/scaffold/scaffold.repository.js";
+import type {
+  ITemplateRepository,
+  DownloadOptions,
+  DownloadResult,
+} from "../../domain/scaffold/scaffold.repository.js";
 
 const TEMPLATE_REPO = "alejandro-technology/react-native-template";
 const TEMPLATE_BRANCH = "main";
 
 export class GithubTemplateRepository implements ITemplateRepository {
   async download(options: DownloadOptions): Promise<DownloadResult> {
-    const { projectName, branch = TEMPLATE_BRANCH, onProgress } = options;
+    const { branch = TEMPLATE_BRANCH, onProgress } = options;
 
     const tempDir = await fsPromises.mkdtemp(path.join(os.tmpdir(), "rnia-"));
     const tarballPath = path.join(tempDir, "template.tar.gz");
@@ -25,9 +29,7 @@ export class GithubTemplateRepository implements ITemplateRepository {
       const response = await fetch(tarballUrl);
 
       if (!response.ok) {
-        throw new Error(
-          `Failed to download template: ${response.status} ${response.statusText}`
-        );
+        throw new Error(`Failed to download template: ${response.status} ${response.statusText}`);
       }
 
       if (!response.body) {
@@ -35,9 +37,8 @@ export class GithubTemplateRepository implements ITemplateRepository {
       }
 
       const fileStream = fs.createWriteStream(tarballPath);
-      // @ts-ignore - response.body is a ReadableStream in Node 22
       const reader = response.body.getReader();
-      
+
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;

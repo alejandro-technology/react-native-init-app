@@ -25,9 +25,7 @@ export async function copyTemplateFiles(ctx: ScaffoldContext): Promise<void> {
 
     const useAgent = ctx.aiProviders.length > 0;
     const isAgentFolder =
-      file.includes(".claude") ||
-      file.includes(".opencode") ||
-      file.includes(".trae");
+      file.includes(".claude") || file.includes(".opencode") || file.includes(".trae");
     if (useAgent && isAgentFolder) {
       templateFile = ".ai/";
     }

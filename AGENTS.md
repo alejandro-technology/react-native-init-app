@@ -18,6 +18,14 @@ The generated project comes from a separate GitHub repo: `alejandro-technology/r
 - `tsconfig.json` has `strict: false`, `moduleResolution: "bundler"`, `target/module: ESNext`. Source imports use `.js` extensions in relative paths (ESM). Do not drop them.
 - Node engine in `package.json` is `>= 22.0.0`; the README says `>= 18` but is stale. Trust `package.json`.
 
+## Lint & format
+
+- **ESLint 9 flat config** at `eslint.config.js`. Uses `typescript-eslint` (recommended), `@eslint/js`, `globals` (Node), and `eslint-config-prettier` last (to disable stylistic rules).
+- **Prettier 3** at `.prettierrc.json` (printWidth 100, double quotes, semicolons, trailing commas all, LF). `.prettierignore` excludes `bin/`, `node_modules/`, lockfiles, `.codegraph/`.
+- **Husky 9** manages the git hook. `core.hooksPath` is set to `.husky/_`; user hooks live in `.husky/` (e.g. `pre-commit`). The `prepare` script in `package.json` runs `husky` after `bun install` to set up hooks on fresh clones.
+- **lint-staged** is configured in `package.json#lint-staged`: on staged `*.{ts,tsx,js,jsx}` runs `eslint --fix` then `prettier --write`; on staged `*.{json,md,mdx,yml,yaml}` runs `prettier --write`. Commits abort if any task exits non-zero, so the working tree must lint+format clean before commit.
+- Override in `eslint.config.js` disables `@typescript-eslint/no-explicit-any` for `src/ui/prompts/main.prompt.ts` (enquirer's `Form`/`multiselect` types don't match the runtime contract).
+
 ## Architecture (Clean Architecture, 4 layers)
 
 ```
@@ -57,13 +65,19 @@ The entrypoint `tui.tsx` is dual-mode. If called with CLI subcommands (`react-na
 
 ## Commands
 
-| Command | What it does (in THIS repo) |
-| --- | --- |
-| `bun run dev` | Run the CLI interactively from source (TSX). Main loop for manual QA. |
-| `bun run check` | `tsc --noEmit` — type checking only, no output. Independent from build. |
-| `bun run build` | Build `bin/index.js` via `scripts/build.ts`. Required before publish. |
-| `npm publish` | Publish to npm. `prepublishOnly` runs `bun run build` automatically. |
-| `bun run clean` | `rm -rf bin/*` — wipes the BUILD OUTPUT, not caches. (Not the user-facing `clean` command.) |
+| Command                | What it does (in THIS repo)                                                                 |
+| ---------------------- | ------------------------------------------------------------------------------------------- |
+| `bun run dev`          | Run the CLI interactively from source (TSX). Main loop for manual QA.                       |
+| `bun run check`        | `tsc --noEmit` — type checking only, no output. Independent from build.                     |
+| `bun run build`        | Build `bin/index.js` via `scripts/build.ts`. Required before publish.                       |
+| `bun run lint`         | Run ESLint over the repo. Non-zero exit on any warning or error.                            |
+| `bun run lint:fix`     | Same as `lint` but applies auto-fixes.                                                      |
+| `bun run format`       | Run Prettier in write mode across the repo.                                                 |
+| `bun run format:check` | Run Prettier in check mode (CI-friendly).                                                   |
+| `npm publish`          | Publish to npm. `prepublishOnly` runs `bun run build` automatically.                        |
+| `bun run clean`        | `rm -rf bin/*` — wipes the BUILD OUTPUT, not caches. (Not the user-facing `clean` command.) |
+
+A commit triggers `.husky/pre-commit` → `bunx lint-staged` → only staged files are processed.
 
 To exercise the real CLI without `bun run dev`, install built artifact: `node bin/index.js` (or `npm link`).
 

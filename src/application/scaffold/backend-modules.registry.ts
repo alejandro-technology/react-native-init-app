@@ -3,11 +3,10 @@ export const FIREBASE_MODULES = {
     dep: "@react-native-firebase/auth",
     diServiceFile: "authentication/infrastructure/auth.service.ts",
     diImportRegex: /import authFirebaseService from '\.\/firebase-auth\.service';\n/,
-    diCaseRegex: /    case 'firebase':\n      return authFirebaseService;\n/,
-    files: [
-      "src/modules/authentication/infrastructure/firebase-auth.service.ts",
-    ],
-    firebaseIndexExport: /export \{ default as authenticationService \} from '\.\/infrastructure\/authentication\.service';\n/,
+    diCaseRegex: / {4}case 'firebase':\n {6}return authFirebaseService;\n/,
+    files: ["src/modules/authentication/infrastructure/firebase-auth.service.ts"],
+    firebaseIndexExport:
+      /export \{ default as authenticationService \} from '\.\/infrastructure\/authentication\.service';\n/,
   },
   firestore: {
     dep: "@react-native-firebase/firestore",
@@ -20,8 +19,8 @@ export const FIREBASE_MODULES = {
       /import userFirebaseService from '\.\/user\.firebase\.service';\n/,
     ],
     diCaseRegexes: [
-      /    case 'firebase':\n      return productFirebaseService;\n/,
-      /    case 'firebase':\n      return userFirebaseService;\n/,
+      / {4}case 'firebase':\n {6}return productFirebaseService;\n/,
+      / {4}case 'firebase':\n {6}return userFirebaseService;\n/,
     ],
     files: [
       "src/modules/products/infrastructure/product.firebase.service.ts",
@@ -31,7 +30,8 @@ export const FIREBASE_MODULES = {
       "src/modules/firebase/domain/firestore.model.ts",
       "src/modules/firebase/domain/firestore.repository.ts",
     ],
-    firebaseIndexExport: /export \{ default as firestoreService \} from '\.\/infrastructure\/firestore\.service';\n/,
+    firebaseIndexExport:
+      /export \{ default as firestoreService \} from '\.\/infrastructure\/firestore\.service';\n/,
   },
   storage: {
     dep: "@react-native-firebase/storage",
@@ -44,7 +44,8 @@ export const FIREBASE_MODULES = {
       "src/modules/firebase/domain/storage.repository.ts",
       "src/modules/firebase/domain/storage.adapter.ts",
     ],
-    firebaseIndexExport: /export \{ default as storageService \} from '\.\/infrastructure\/storage\.service';\n/,
+    firebaseIndexExport:
+      /export \{ default as storageService \} from '\.\/infrastructure\/storage\.service';\n/,
   },
 } as const;
 

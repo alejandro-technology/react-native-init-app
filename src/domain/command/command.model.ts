@@ -1,10 +1,4 @@
-export type CommandType =
-  | "scaffold"
-  | "clean"
-  | "pod-install"
-  | "run-android"
-  | "version"
-  | "help";
+export type CommandType = "scaffold" | "clean" | "pod-install" | "run-android" | "version" | "help";
 
 export interface CleanOption {
   label: string;
@@ -13,9 +7,4 @@ export interface CleanOption {
   destructive?: boolean;
 }
 
-export type ProgressCallback = (
-  step: number,
-  total: number,
-  message: string,
-  log?: string
-) => void;
+export type ProgressCallback = (step: number, total: number, message: string, log?: string) => void;

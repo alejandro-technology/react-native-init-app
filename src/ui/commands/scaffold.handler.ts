@@ -6,7 +6,7 @@ import { scaffoldProject } from "../../application/scaffold/scaffold.use-case.js
 export async function runScaffold(
   scaffoldData: ScaffoldData,
   onProgress: ProgressCallback,
-  onOutput: (chunk: string) => void
+  onOutput: (chunk: string) => void,
 ): Promise<{ output: string; success: boolean }> {
   const templateRepo = new GithubTemplateRepository();
 

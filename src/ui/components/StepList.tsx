@@ -15,11 +15,11 @@ export const StepList: React.FC<StepListProps> = ({ steps, currentStep }) => {
         const isComplete = index < currentStep;
         const isCurrent = index === currentStep;
 
-        let icon = <Text color="gray">  ○ </Text>;
+        let icon = <Text color="gray"> ○ </Text>;
         let stepText = <Text color="gray">{step}</Text>;
 
         if (isComplete) {
-          icon = <Text color="green">  ● </Text>;
+          icon = <Text color="green"> ● </Text>;
           stepText = <Text color="green">{step}</Text>;
         } else if (isCurrent) {
           icon = (
@@ -27,7 +27,11 @@ export const StepList: React.FC<StepListProps> = ({ steps, currentStep }) => {
               <Spinner />
             </Box>
           );
-          stepText = <Text color="yellow" bold>{step}</Text>;
+          stepText = (
+            <Text color="yellow" bold>
+              {step}
+            </Text>
+          );
         }
 
         return (

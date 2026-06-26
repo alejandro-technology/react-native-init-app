@@ -39,11 +39,7 @@ interface AppProps {
   scaffoldData?: ScaffoldData;
 }
 
-export const App: React.FC<AppProps> = ({
-  command,
-  cleanOption,
-  scaffoldData,
-}) => {
+export const App: React.FC<AppProps> = ({ command, cleanOption, scaffoldData }) => {
   const [output, setOutput] = useState("");
   const [status, setStatus] = useState<"running" | "success" | "error">("running");
   const [currentStep, setCurrentStep] = useState(0);
@@ -135,16 +131,8 @@ export const App: React.FC<AppProps> = ({
         <Text bold color="gray">
           Output:
         </Text>
-        <Box
-          marginTop={1}
-          padding={1}
-          borderStyle="double"
-          borderColor="gray"
-          minHeight={18}
-        >
-          <Text>
-            {status === "running" ? (view || "Processing...") : (output || view)}
-          </Text>
+        <Box marginTop={1} padding={1} borderStyle="double" borderColor="gray" minHeight={18}>
+          <Text>{status === "running" ? view || "Processing..." : output || view}</Text>
         </Box>
       </Box>
       <Spacer />

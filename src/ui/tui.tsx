@@ -25,7 +25,7 @@ async function showIntroAnimation(): Promise<void> {
           unmount();
           process.stdout.write("\n".repeat(50));
           console.clear();
-          
+
           // Let the event loop settle and let Ink complete its async cleanup before restoring stdin
           setTimeout(() => {
             if (process.stdin.isTTY) {
@@ -33,19 +33,26 @@ async function showIntroAnimation(): Promise<void> {
               process.stdin.resume();
               try {
                 process.stdin.read();
-              } catch (e) {}
+              } catch {}
             }
             resolve();
           }, 100);
         }}
-      />
+      />,
     );
   });
 }
 
 async function main() {
   const args = process.argv.slice(2);
-  const CLI_SUBCOMMANDS = new Set(["scaffold", "clean", "pod-install", "run-android", "version", "help"]);
+  const CLI_SUBCOMMANDS = new Set([
+    "scaffold",
+    "clean",
+    "pod-install",
+    "run-android",
+    "version",
+    "help",
+  ]);
   if (args.length > 0 && CLI_SUBCOMMANDS.has(args[0])) {
     await runCli(args);
     return; // runCli exits the process anyway
@@ -64,7 +71,7 @@ async function main() {
         command={command as CommandType}
         cleanOption={cleanOption}
         scaffoldData={scaffoldData}
-      />
+      />,
     );
 
     // Ensure graceful exit on Ctrl+C

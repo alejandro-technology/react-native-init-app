@@ -10,7 +10,7 @@ export function useOutputBuffer(maxLines: number = 10) {
         return next.slice(-maxLines);
       });
     },
-    [maxLines]
+    [maxLines],
   );
 
   const view = buffer.join("\n");

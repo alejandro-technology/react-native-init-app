@@ -12,9 +12,7 @@ import {
 
 function printHeader(): void {
   console.log(chalk.cyan("\n⚡ React Native TUI\n"));
-  console.log(
-    chalk.dim("Create React Native projects with Clean Architecture\n")
-  );
+  console.log(chalk.dim("Create React Native projects with Clean Architecture\n"));
 }
 
 async function confirmAction(message: string): Promise<boolean> {
@@ -169,9 +167,7 @@ async function promptCleanOption(): Promise<PromptResult> {
 
   if (selectedOption?.destructive) {
     const confirmed = await confirmAction(
-      `⚠️  This will delete ${
-        cleanOption === "All" ? "all caches" : cleanOption
-      }. Are you sure?`
+      `⚠️  This will delete ${cleanOption === "All" ? "all caches" : cleanOption}. Are you sure?`,
     );
     if (!confirmed) {
       return runPrompt();

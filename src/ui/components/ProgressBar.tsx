@@ -8,11 +8,7 @@ interface ProgressBarProps {
   label: string;
 }
 
-export const ProgressBar: React.FC<ProgressBarProps> = ({
-  current,
-  total,
-  label,
-}) => {
+export const ProgressBar: React.FC<ProgressBarProps> = ({ current, total, label }) => {
   const percentage = Math.round((current / total) * 100);
   const filled = Math.round((current / total) * PROGRESS_BAR_WIDTH);
   const empty = PROGRESS_BAR_WIDTH - filled;

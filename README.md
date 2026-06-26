@@ -92,6 +92,7 @@ react-native-tui clean --target all
 ```
 
 ### JSON Output
+
 For programmatic consumption, append `--json`. All intermediate progress logs will be redirected to `stderr`, and a strictly typed JSON object will be printed to `stdout` upon completion:
 
 ```bash
@@ -99,6 +100,7 @@ react-native-tui scaffold --name MyApp --json
 ```
 
 **JSON Success Output:**
+
 ```json
 {
   "success": true,
@@ -107,6 +109,7 @@ react-native-tui scaffold --name MyApp --json
 ```
 
 **JSON Error Output:**
+
 ```json
 {
   "success": false,
@@ -115,6 +118,7 @@ react-native-tui scaffold --name MyApp --json
 ```
 
 # 🤝 Contributing
+
 Contributions are welcome.
 Fork the repository
 Create your feature branch
