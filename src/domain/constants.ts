@@ -35,11 +35,19 @@ export const CLEAN_OPTIONS: CleanOption[] = [
   },
   {
     label: "All",
-    script: "clean-all",
+    script: "scaffold",
     cleanMessage: "All caches cleaned",
     destructive: true,
   },
 ];
+
+export const CLEAN_TARGETS: Record<string, string> = {
+  android: "Android",
+  ios: "iOS",
+  "node-modules": "Node Modules",
+  watchman: "Watchman",
+  all: "All",
+};
 
 export const SCAFFOLD_STEPS = [
   "Initializing React Native project...",

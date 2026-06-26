@@ -9,6 +9,8 @@ import { App } from "./components/App.js";
 import { LogoAnimation } from "./components/LogoAnimation.js";
 import type { CommandType } from "../domain/command/command.model.js";
 
+import { runCli } from "./cli/cli.js";
+
 async function showIntroAnimation(): Promise<void> {
   if (!process.stdin.isTTY) {
     return;
@@ -42,6 +44,13 @@ async function showIntroAnimation(): Promise<void> {
 }
 
 async function main() {
+  const args = process.argv.slice(2);
+  const CLI_SUBCOMMANDS = new Set(["scaffold", "clean", "pod-install", "run-android", "version", "help"]);
+  if (args.length > 0 && CLI_SUBCOMMANDS.has(args[0])) {
+    await runCli(args);
+    return; // runCli exits the process anyway
+  }
+
   try {
     await showIntroAnimation();
     const { command, cleanOption, scaffoldData } = await runPrompt();

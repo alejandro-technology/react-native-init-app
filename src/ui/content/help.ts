@@ -12,12 +12,12 @@ export const HELP_OUTPUT = `
 🤖  run-android - Run app on Android device/emulator
 
 Usage:
-  npm init react-native-init-app
-  npx create-react-native-init-app
-  bunx create-react-native-init-app
-  rnia
+  npm init react-native-tui
+  npx create-react-native-tui
+  bunx create-react-native-tui
+  react-native-tui
 
 Examples:
-  npm init react-native-init-app
-  bunx create-react-native-init-app --help
+  npm init react-native-tui
+  bunx create-react-native-tui --help
 `;

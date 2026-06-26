@@ -6,11 +6,10 @@ Version: ${VERSION}
 React Native Template: ${RN_VERSION}
 
 Usage:
-  npm init react-native-init-app
-  bun init react-native-init-app
-  npx create-react-native-init-app
-  bunx create-react-native-init-app
-  rnia
+  npm init react-native-tui
+  npx create-react-native-tui
+  bunx create-react-native-tui
+  react-native-tui
 
-Run 'create-react-native-init-app --help' for more information.
+Run 'create-react-native-tui --help' for more information.
 `;

@@ -4,7 +4,7 @@ Compact guidance for OpenCode sessions working in this repo.
 
 ## What this repo is
 
-`create-react-native-init-app` (`rnia`) — an interactive CLI that scaffolds React Native projects from a prebuilt Clean Architecture template. The CLI itself is the product published to npm. It is NOT a React Native app; it is a Node/Bun CLI written in TypeScript with an Ink (React) UI.
+`create-react-native-tui` (`react-native-tui`) — an interactive CLI that scaffolds React Native projects from a prebuilt Clean Architecture template. The CLI itself is the product published to npm. It is NOT a React Native app; it is a Node/Bun CLI written in TypeScript with an Ink (React) UI.
 
 The generated project comes from a separate GitHub repo: `alejandro-technology/react-native-template` branch `main` (hardcoded in `src/infrastructure/template/github-template.repository.ts`). This repo does not contain the template source.
 
@@ -28,17 +28,18 @@ src/
     commands/      run-command.use-case.ts, exec-streamed.ts, progress.ts
   infrastructure/  GithubTemplateRepository (download/extract tar from GitHub)
   ui/
-    tui.tsx        entrypoint → runPrompt() (enquirer) → render(<App>) (Ink)
-    prompts/       enquirer prompt chains
-    components/     Ink primitives (ProgressBar, StepList, Badge, etc.)
-    commands/      scaffold.handler.ts (download + scaffold + cleanup flow)
-    content/       version.ts, help.ts (static command output strings)
+    tui.tsx        entrypoint → Routes to CLI or TUI mode
+    cli/           cli.ts, cli-parsers.ts, cli-logger.ts (headless CLI mode adapters)
+    prompts/       enquirer prompt chains (TUI)
+    components/     Ink primitives (ProgressBar, StepList, Badge, etc.) (TUI)
+    commands/      scaffold.handler.ts (download + scaffold + cleanup flow, shared by CLI/TUI)
+    content/       version.ts, help.ts (static command output strings, shared by CLI/TUI)
     hooks/         use-output-buffer.ts (ring buffer for streaming output)
 ```
 
 `scaffoldProject` is an orchestrator that calls 9 step functions in sequence (`steps/`), each receiving a shared `ScaffoldContext`. Firebase module definitions (file paths, DI regex patches, npm deps) live in `backend-modules.registry.ts` — the single source of truth for adding/removing backend modules.
 
-`App.tsx` dispatches by command via a handlers map: `STATIC_COMMANDS` (version/help) short-circuit, `scaffold` delegates to `scaffold.handler.ts`, everything else calls `runCommand`.
+The entrypoint `tui.tsx` is dual-mode. If called with CLI subcommands (`react-native-tui scaffold ...`), it delegates to `src/ui/cli/cli.ts` for headless execution. If called with no arguments, it starts the interactive `runPrompt()` and renders `<App>` (Ink). Both modes share `scaffold.handler.ts` and the use-cases.
 
 ## Critical quirks (easy to get wrong)
 

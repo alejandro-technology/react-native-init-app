@@ -5,8 +5,7 @@
   "description": "Interactive CLI to scaffold React Native projects",
   "main": "bin/index.js",
   "bin": {
-    "react-native-tui": "./bin/index.js",
-    "rnia": "./bin/index.js"
+    "react-native-tui": "./bin/index.js"
   },
   "scripts": {
     "clean": "rm -rf bin/*",

@@ -40,9 +40,7 @@ If you prefer to have the commands available everywhere:
 ```bash
 npm install -g create-react-native-tui
 
-# Now you can use the following commands:
-rnia
-# or
+# Now you can use the following command:
 react-native-tui
 ```
 
@@ -78,6 +76,43 @@ The CLI downloads the latest template from:
 | run-android | Run app on Android                                       |
 | version     | Show CLI version                                         |
 | help        | Show help                                                |
+
+## 🤖 Headless CLI Mode (For CI & AI Agents)
+
+If you invoke the tool without arguments, it opens the interactive TUI.
+By passing a command and flags, the tool runs in non-interactive headless mode:
+
+```bash
+# Scaffold a project skipping prompts
+react-native-tui scaffold --name MyApp --bundle-id com.myapp --pm bun --ai claude,opencode --backend firebase --firebase-modules auth,firestore
+
+# Clean caches headless
+react-native-tui clean --target android
+react-native-tui clean --target all
+```
+
+### JSON Output
+For programmatic consumption, append `--json`. All intermediate progress logs will be redirected to `stderr`, and a strictly typed JSON object will be printed to `stdout` upon completion:
+
+```bash
+react-native-tui scaffold --name MyApp --json
+```
+
+**JSON Success Output:**
+```json
+{
+  "success": true,
+  "output": "✅ Setup complete!\n..."
+}
+```
+
+**JSON Error Output:**
+```json
+{
+  "success": false,
+  "error": "Missing required flag: --name"
+}
+```
 
 # 🤝 Contributing
 Contributions are welcome.
