@@ -1,4 +1,5 @@
 import { PM_COMMANDS } from "../constants.js";
+import type { AiProvider, BackendSelection } from "../scaffold/scaffold.model.js";
 
 export type PmCommandType = keyof typeof PM_COMMANDS;
 
@@ -9,11 +10,8 @@ export interface ProjectConfig {
   packageManager: string;
   installDeps: boolean;
   podInstall: boolean;
-  useClaude: boolean;
-  useOpencode: boolean;
-  useTrae: boolean;
-  useFirebase: boolean;
-  firebaseModules: string[];
+  aiProviders: AiProvider[];
+  backend?: BackendSelection;
 }
 
 export interface PromptResult {

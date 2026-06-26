@@ -103,17 +103,24 @@ async function promptScaffoldData(): Promise<PromptResult> {
     ],
   } as any);
 
-  const { includeFirebase } = await enquirer.prompt<{
-    includeFirebase: boolean;
+  const { backendChoice } = await enquirer.prompt<{
+    backendChoice: string;
   }>({
-    type: "confirm",
-    name: "includeFirebase",
-    message: "Include Firebase setup?",
-    initial: false,
-  } as any);
+    type: "select",
+    name: "backendChoice",
+    message: "Which backend provider do you want to include?",
+    choices: [
+      { name: "none", message: "None" },
+      { name: "firebase", message: "Firebase" },
+      { name: "supabase", message: "Supabase" },
+      { name: "http", message: "Http API (Custom)" },
+      { name: "local", message: "Local (SQLite)" },
+    ],
+    initial: 0,
+  });
 
-  let firebaseModules: string[] = [];
-  if (includeFirebase) {
+  let backend: { name: "firebase"; modules: string[] } | undefined;
+  if (backendChoice === "firebase") {
     const response = await enquirer.prompt<{ firebaseModules: string[] }>({
       type: "multiselect",
       name: "firebaseModules",
@@ -126,7 +133,10 @@ async function promptScaffoldData(): Promise<PromptResult> {
       ],
       initial: [0, 1, 2], // Select all by default
     } as any);
-    firebaseModules = response.firebaseModules;
+    backend = {
+      name: "firebase",
+      modules: response.firebaseModules,
+    };
   }
 
   return {
@@ -138,11 +148,8 @@ async function promptScaffoldData(): Promise<PromptResult> {
       packageManager,
       installDeps: options.includes("installDeps"),
       podInstall: options.includes("podInstall"),
-      useClaude: codeAgents.includes("claude"),
-      useOpencode: codeAgents.includes("opencode"),
-      useTrae: codeAgents.includes("trae"),
-      useFirebase: includeFirebase,
-      firebaseModules,
+      aiProviders: codeAgents as ("claude" | "opencode" | "trae")[],
+      backend,
     },
   };
 }

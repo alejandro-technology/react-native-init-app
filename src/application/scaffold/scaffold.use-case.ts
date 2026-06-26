@@ -128,18 +128,15 @@ export async function scaffoldProject(
     packageManager,
     installDeps,
     podInstall,
-    useClaude,
-    useOpencode,
-    useTrae,
-    useFirebase,
-    firebaseModules,
+    aiProviders,
+    backend,
     templatePath,
     onProgress,
   } = options;
 
   const projectDir = path.resolve(directory);
   const totalSteps =
-    7 +
+    8 +
     (installDeps ? 1 : 0) +
     (podInstall && process.platform === "darwin" ? 1 : 0);
   let step = 0;
@@ -201,9 +198,9 @@ export async function scaffoldProject(
     onProgress?.(step++, totalSteps, "Copying template files...");
 
     const extraFiles: string[] = [
-      ...(useClaude ? CODE_AGENT_FILES.claude : []),
-      ...(useOpencode ? CODE_AGENT_FILES.opencode : []),
-      ...(useTrae ? CODE_AGENT_FILES.trae : []),
+      ...(aiProviders.includes("claude") ? CODE_AGENT_FILES.claude : []),
+      ...(aiProviders.includes("opencode") ? CODE_AGENT_FILES.opencode : []),
+      ...(aiProviders.includes("trae") ? CODE_AGENT_FILES.trae : []),
     ];
 
     const filesToCopy = Array.from(new Set([...FILES_TO_COPY, ...extraFiles]));
@@ -211,7 +208,7 @@ export async function scaffoldProject(
     for (const file of filesToCopy) {
       let templateFile = file;
 
-      const useAgent = useOpencode || useClaude || useTrae;
+      const useAgent = aiProviders.length > 0;
       const isAgentFolder =
         file.includes(".claude") ||
         file.includes(".opencode") ||
@@ -227,8 +224,11 @@ export async function scaffoldProject(
       }
     }
 
+    const isFirebase = backend?.name === "firebase";
+    const activeBackendModules = backend?.modules ?? [];
+
     // Copy Firebase files separately (they have different src/dest paths)
-    if (useFirebase) {
+    if (isFirebase) {
       for (const { src, dest } of FIREBASE_FILES(projectName)) {
         const srcPath = path.join(templatePath, src);
         const destPath = path.join(projectDir, dest);
@@ -289,20 +289,20 @@ export async function scaffoldProject(
 
     // Prune Firebase dependencies if needed
     const templateDeps = { ...templatePackageJson.dependencies };
-    if (!useFirebase) {
+    if (!isFirebase) {
       Object.keys(templateDeps).forEach((dep) => {
         if (dep.startsWith("@react-native-firebase/")) {
           delete templateDeps[dep];
         }
       });
     } else {
-      if (!firebaseModules.includes("auth")) {
+      if (!activeBackendModules.includes("auth")) {
         delete templateDeps["@react-native-firebase/auth"];
       }
-      if (!firebaseModules.includes("firestore")) {
+      if (!activeBackendModules.includes("firestore")) {
         delete templateDeps["@react-native-firebase/firestore"];
       }
-      if (!firebaseModules.includes("storage")) {
+      if (!activeBackendModules.includes("storage")) {
         delete templateDeps["@react-native-firebase/storage"];
       }
       // @react-native-firebase/app is always kept if useFirebase is true
@@ -327,7 +327,7 @@ export async function scaffoldProject(
     await writeJson(appJsonPath, appJson);
 
     onProgress?.(step++, totalSteps, "Pruning unused modules...");
-    if (!useFirebase) {
+    if (!isFirebase) {
       // Remove all firebase infrastructure files
       await fs.rm(path.join(projectDir, "src/modules/firebase"), {
         recursive: true,
@@ -366,7 +366,7 @@ export async function scaffoldProject(
         await fs.writeFile(configPath, configContent);
       }
     } else {
-      if (!firebaseModules.includes("auth")) {
+      if (!activeBackendModules.includes("auth")) {
         await fs.rm(
           path.join(
             projectDir,
@@ -375,7 +375,7 @@ export async function scaffoldProject(
           { force: true },
         );
       }
-      if (!firebaseModules.includes("firestore")) {
+      if (!activeBackendModules.includes("firestore")) {
         await fs.rm(
           path.join(
             projectDir,
@@ -419,7 +419,7 @@ export async function scaffoldProject(
           { force: true },
         );
       }
-      if (!firebaseModules.includes("storage")) {
+      if (!activeBackendModules.includes("storage")) {
         await fs.rm(
           path.join(
             projectDir,
@@ -470,7 +470,7 @@ export async function scaffoldProject(
     );
     if (await pathExists(authServicePath)) {
       let authServiceContent = await fs.readFile(authServicePath, "utf-8");
-      if (!useFirebase || !firebaseModules.includes("auth")) {
+      if (!isFirebase || !activeBackendModules.includes("auth")) {
         authServiceContent = authServiceContent.replace(
           /import authFirebaseService from '\.\/firebase-auth\.service';\n/,
           "",
@@ -493,7 +493,7 @@ export async function scaffoldProject(
         productServicePath,
         "utf-8",
       );
-      if (!useFirebase || !firebaseModules.includes("firestore")) {
+      if (!isFirebase || !activeBackendModules.includes("firestore")) {
         productServiceContent = productServiceContent.replace(
           /import productFirebaseService from '\.\/product\.firebase\.service';\n/,
           "",
@@ -513,7 +513,7 @@ export async function scaffoldProject(
     );
     if (await pathExists(userServicePath)) {
       let userServiceContent = await fs.readFile(userServicePath, "utf-8");
-      if (!useFirebase || !firebaseModules.includes("firestore")) {
+      if (!isFirebase || !activeBackendModules.includes("firestore")) {
         userServiceContent = userServiceContent.replace(
           /import userFirebaseService from '\.\/user\.firebase\.service';\n/,
           "",
@@ -527,26 +527,26 @@ export async function scaffoldProject(
     }
 
     // Adjust firebase exports index if firebase is kept but some modules are pruned
-    if (useFirebase) {
+    if (isFirebase) {
       const firebaseIndexPath = path.join(
         projectDir,
         "src/modules/firebase/index.ts",
       );
       if (await pathExists(firebaseIndexPath)) {
         let indexContent = await fs.readFile(firebaseIndexPath, "utf-8");
-        if (!firebaseModules.includes("firestore")) {
+        if (!activeBackendModules.includes("firestore")) {
           indexContent = indexContent.replace(
             /export \{ default as firestoreService \} from '\.\/infrastructure\/firestore\.service';\n/,
             "",
           );
         }
-        if (!firebaseModules.includes("storage")) {
+        if (!activeBackendModules.includes("storage")) {
           indexContent = indexContent.replace(
             /export \{ default as storageService \} from '\.\/infrastructure\/storage\.service';\n/,
             "",
           );
         }
-        if (!firebaseModules.includes('auth')) {
+        if (!activeBackendModules.includes('auth')) {
           indexContent = indexContent.replace(
             /export \{ default as authenticationService \} from '\.\/infrastructure\/authentication\.service';\n/,
             "",
@@ -585,14 +585,14 @@ export async function scaffoldProject(
         await runStreamed(
           cmd,
           ["run", "pod-cocoa"],
-          step++,
+          step,
           podMessage,
           projectDir,
         );
         await runStreamed(
           cmd,
           ["run", "pod-install"],
-          step++,
+          step,
           podMessage,
           projectDir,
         );

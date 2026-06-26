@@ -1,3 +1,12 @@
+export type AiProvider = "claude" | "opencode" | "trae";
+
+export type BackendProviderName = "firebase"; // extensible
+
+export interface BackendSelection {
+  name: BackendProviderName;
+  modules: string[];
+}
+
 export interface ScaffoldOptions {
   projectName: string;
   bundleId: string;
@@ -5,11 +14,8 @@ export interface ScaffoldOptions {
   packageManager: string;
   installDeps: boolean;
   podInstall: boolean;
-  useClaude: boolean;
-  useOpencode: boolean;
-  useTrae: boolean;
-  useFirebase: boolean;
-  firebaseModules: string[];
+  aiProviders: AiProvider[];
+  backend?: BackendSelection;
   templatePath: string;
   onProgress?: (
     step: number,
