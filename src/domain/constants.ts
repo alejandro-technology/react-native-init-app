@@ -75,8 +75,9 @@ export const SCAFFOLD_STEPS = [
   "Copying template files...",
   "Merging package.json...",
   "Pruning unused modules...",
+  "Pruning navigation module...",
   "Patching dependency injectors...",
-  "Configuring git...",
   "Installing dependencies...",
   "Running pod install...",
+  "Configuring git...",
 ];

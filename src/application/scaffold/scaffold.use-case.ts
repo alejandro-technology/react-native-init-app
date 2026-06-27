@@ -15,6 +15,7 @@ import { pruneBackendModules } from "./steps/prune-backend-modules.step.js";
 import { patchDiInjectors } from "./steps/patch-di-injectors.step.js";
 import { configureGit } from "./steps/configure-git.step.js";
 import { installDependencies } from "./steps/install-dependencies.step.js";
+import { pruneNavigationModule } from "./steps/prune-navigation.step.js";
 
 // ---------------------------------------------------------------------------
 // Constants (shared with step files via import)
@@ -261,6 +262,7 @@ export async function scaffoldProject(
     if (ctx.isFirebase) await copyFirebaseFiles(ctx);
     await mergePackageJson(ctx);
     await pruneBackendModules(ctx);
+    await pruneNavigationModule(ctx);
     await patchDiInjectors(ctx);
     if (ctx.installDeps) await installDependencies(ctx);
     await configureGit(ctx);
