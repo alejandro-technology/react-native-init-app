@@ -87,6 +87,7 @@ export const CODE_AGENT_FILES = {
   claude: ["CLAUDE.md", ".claude"],
   opencode: ["AGENTS.md", "opencode.json", ".opencode"],
   trae: [".trae", "TRAE.md"],
+  agents: ["AGENTS.md", ".agents"],
 } as const;
 
 export const TEMPLATE_NAME = "rncatemplate";

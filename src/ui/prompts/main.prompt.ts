@@ -99,6 +99,7 @@ async function promptScaffoldData(): Promise<PromptResult> {
       { name: "claude", message: "Claude" },
       { name: "opencode", message: "OpenCode" },
       { name: "trae", message: "Trae" },
+      { name: "agents", message: "Agents format (Antigravity, Kilo, Pi)" },
     ],
   } as any);
 
