@@ -1,16 +1,13 @@
 <div align="center">
 <img width="1920" height="1080" alt="VectorCode banner" src="assets/Banner.jpg" />
 <a href="https://github.com/alejandro-technology/react-native-init-app/actions/workflows/ci.yml"><img src="https://github.com/alejandro-technology/react-native-init-app/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+<a href="https://www.npmjs.com/package/create-react-native-tui"><img src="https://img.shields.io/npm/v/create-react-native-tui" alt="npm"></a>
+<a href="https://github.com/alejandro-technology/react-native-init-app/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="license"></a>
+
 <h1>React Native TUI ⚡</h1>
 <p>Interactive TUI and CLI tool to <strong>scaffold production-ready React Native projects</strong> using <strong>Clean Architecture.</strong></p>
 
 </div>
-
-![npm](https://img.shields.io/npm/v/create-react-native-tui)
-![license](https://img.shields.io/badge/license-MIT-green)
-![react-native](https://img.shields.io/badge/react--native-cli-blue)
-
-Interactive TUI and CLI tool to **scaffold production-ready React Native projects** using **Clean Architecture**.
 
 This tool downloads a preconfigured template and helps you quickly bootstrap scalable mobile applications with best practices already in place.
 
