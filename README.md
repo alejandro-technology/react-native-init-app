@@ -1,12 +1,18 @@
-# React Native TUI ⚡
+<div align="center">
+<img width="1920" height="1080" alt="VectorCode banner" src="assets/Banner.jpg" />
+<a href="https://github.com/alejandro-technology/react-native-init-app/actions/workflows/ci.yml"><img src="https://github.com/alejandro-technology/react-native-init-app/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+<h1>React Native TUI ⚡</h1>
+<p>Interactive TUI and CLI tool to <strong>scaffold production-ready React Native projects</strong> using <strong>Clean Architecture.</strong></p>
+
+</div>
 
 ![npm](https://img.shields.io/npm/v/create-react-native-tui)
 ![license](https://img.shields.io/badge/license-MIT-green)
 ![react-native](https://img.shields.io/badge/react--native-cli-blue)
 
-Interactive CLI tool to **scaffold production-ready React Native projects** using **Clean Architecture**.
+Interactive TUI and CLI tool to **scaffold production-ready React Native projects** using **Clean Architecture**.
 
-This CLI downloads a preconfigured template and helps you quickly bootstrap scalable mobile applications with best practices already in place.
+This tool downloads a preconfigured template and helps you quickly bootstrap scalable mobile applications with best practices already in place.
 
 Perfect for:
 
@@ -68,38 +74,131 @@ The CLI downloads the latest template from:
 
 ## 🧰 Commands
 
-| Command     | Description                                              |
-| ----------- | -------------------------------------------------------- |
-| scaffold    | Create new project from template                         |
-| clean       | Clean caches (Android, iOS, Node Modules, Watchman, All) |
-| pod-install | Install CocoaPods dependencies                           |
-| run-android | Run app on Android                                       |
-| version     | Show CLI version                                         |
-| help        | Show help                                                |
+### Modos de ejecución
 
-## 🤖 Headless CLI Mode (For CI & AI Agents)
+- **TUI Interactivo**: Ejecuta `react-native-tui` sin argumentos para iniciar la interfaz de terminal interactiva
+- **CLI Headless**: Usa comandos y flags para ejecutar operaciones sin interacción (ideal para CI/CD y agentes AI)
 
-If you invoke the tool without arguments, it opens the interactive TUI.
-By passing a command and flags, the tool runs in non-interactive headless mode:
+---
+
+### Comando: `scaffold`
+
+Crea un nuevo proyecto React Native desde la plantilla preconfigurada.
+
+#### Opciones obligatorias
+
+| Flag     | Descripción                       |
+| -------- | --------------------------------- |
+| `--name` | Nombre del proyecto (ej: `MyApp`) |
+
+#### Opciones opcionales
+
+| Flag                 | Descripción                                                                    | Valor por defecto               | Valores válidos                |
+| -------------------- | ------------------------------------------------------------------------------ | ------------------------------- | ------------------------------ |
+| `--bundle-id`        | Bundle ID de la aplicación                                                     | `com.company.<nombre-proyecto>` | Cualquier bundle ID válido     |
+| `--directory`        | Directorio donde se creará el proyecto                                         | `./<nombre-proyecto>`           | Ruta válida                    |
+| `--pm`               | Gestor de paquetes                                                             | `npm`                           | `npm`, `yarn`, `pnpm`, `bun`   |
+| `--install-deps`     | Instala dependencias automáticamente                                           | `false`                         | -                              |
+| `--pod-install`      | Instala CocoaPods automáticamente (solo iOS)                                   | `false`                         | -                              |
+| `--ai`               | Proveedores de IA para configurar (separados por comas)                        | `[]`                            | `claude`, `opencode`, `trae`   |
+| `--backend`          | Backend a configurar                                                           | `none`                          | `none`, `firebase`             |
+| `--firebase-modules` | Módulos de Firebase a habilitar (si `--backend=firebase`, separados por comas) | `auth,firestore,storage`        | `auth`, `firestore`, `storage` |
+| `--json`             | Salida en formato JSON (para consumo programático)                             | `false`                         | -                              |
+
+#### Ejemplos de `scaffold`
 
 ```bash
-# Scaffold a project skipping prompts
-react-native-tui scaffold --name MyApp --bundle-id com.myapp --pm bun --ai claude,opencode --backend firebase --firebase-modules auth,firestore
+# Básico (solo nombre)
+react-native-tui scaffold --name MyApp
 
-# Clean caches headless
-react-native-tui clean --target android
-react-native-tui clean --target all
-```
+# Completo con todas las opciones
+react-native-tui scaffold \
+  --name MyApp \
+  --bundle-id com.empresa.myapp \
+  --directory ~/projects/myapp \
+  --pm bun \
+  --install-deps \
+  --pod-install \
+  --ai claude,trae \
+  --backend firebase \
+  --firebase-modules auth,firestore
 
-### JSON Output
-
-For programmatic consumption, append `--json`. All intermediate progress logs will be redirected to `stderr`, and a strictly typed JSON object will be printed to `stdout` upon completion:
-
-```bash
+# Con salida JSON
 react-native-tui scaffold --name MyApp --json
 ```
 
-**JSON Success Output:**
+---
+
+### Comando: `clean`
+
+Limpia cachés y carpetas de compilación.
+
+#### Opciones obligatorias
+
+| Flag       | Descripción        |
+| ---------- | ------------------ |
+| `--target` | Objetivo a limpiar |
+
+#### Valores válidos para `--target`
+
+| Valor          | Descripción                              |
+| -------------- | ---------------------------------------- |
+| `android`      | Limpia carpeta de compilación de Android |
+| `ios`          | Limpia carpeta de compilación de iOS     |
+| `node-modules` | Elimina carpeta `node_modules`           |
+| `watchman`     | Limpia caché de Watchman                 |
+| `all`          | Limpia todo lo anterior                  |
+
+#### Opciones adicionales
+
+| Flag     | Descripción            |
+| -------- | ---------------------- |
+| `--json` | Salida en formato JSON |
+
+#### Ejemplos de `clean`
+
+```bash
+# Limpiar Android
+react-native-tui clean --target android
+
+# Limpiar todo
+react-native-tui clean --target all
+
+# Con salida JSON
+react-native-tui clean --target ios --json
+```
+
+---
+
+### Comando: `version`
+
+Muestra la versión del CLI.
+
+#### Ejemplo de `version`
+
+```bash
+react-native-tui version
+```
+
+---
+
+### Comando: `help`
+
+Muestra la ayuda del CLI.
+
+#### Ejemplo de `help`
+
+```bash
+react-native-tui help
+```
+
+---
+
+## 🤖 Salida JSON
+
+Para consumo programático, agrega el flag `--json` a cualquier comando. Los logs intermedios se envían a `stderr`, y el resultado final se imprime en `stdout` como un objeto JSON tipado.
+
+**Salida JSON de éxito:**
 
 ```json
 {
@@ -108,7 +207,7 @@ react-native-tui scaffold --name MyApp --json
 }
 ```
 
-**JSON Error Output:**
+**Salida JSON de error:**
 
 ```json
 {
